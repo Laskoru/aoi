@@ -1,63 +1,69 @@
 import 'package:flutter/material.dart';
+import '../models/koi.dart';
 
 class AddKoiScreen extends StatefulWidget {
+  const AddKoiScreen({super.key});
+
   @override
-  _AddKoiScreenState createState() => _AddKoiScreenState();
+  State<AddKoiScreen> createState() => _AddKoiScreenState();
 }
 
 class _AddKoiScreenState extends State<AddKoiScreen> {
-  final _nameCtrl = TextEditingController();
-  final _varietyCtrl = TextEditingController();
-  final _breederCtrl = TextEditingController();
-  final _lineageCtrl = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
+  final _varietyController = TextEditingController();
+  final _sizeController = TextEditingController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Nouvelle acquisition")),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildField("Nom du Koï", _nameCtrl, "ex: Kohaku Royal"),
-            _buildField("Variété", _varietyCtrl, "ex: Kohaku, Sanke..."),
-            _buildField("Éleveur", _breederCtrl, "ex: Sakai Fish Farm"),
-            _buildField(
-              "Généalogie / Lignée",
-              _lineageCtrl,
-              "ex: Sang de Rose",
-            ),
-            SizedBox(height: 30),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                minimumSize: Size(double.infinity, 55),
-                backgroundColor: Colors.blue,
+      appBar: AppBar(title: const Text('Ajouter une Carpe')),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            children: [
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(labelText: 'Nom du Koi'),
+                validator: (v) => v!.isEmpty ? 'Requis' : null,
               ),
-              onPressed: () => Navigator.pop(context),
-              child: Text(
-                "ENREGISTRER LE POISSON",
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
+              const SizedBox(height: 15),
+              TextFormField(
+                controller: _varietyController,
+                decoration: const InputDecoration(
+                  labelText: 'Variété (ex: Kohaku)',
                 ),
+                validator: (v) => v!.isEmpty ? 'Requis' : null,
               ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildField(String label, TextEditingController ctrl, String hint) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: TextField(
-        controller: ctrl,
-        decoration: InputDecoration(
-          labelText: label,
-          hintText: hint,
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              const SizedBox(height: 15),
+              TextFormField(
+                controller: _sizeController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Taille (cm)'),
+              ),
+              const SizedBox(height: 30),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  minimumSize: const Size.fromHeight(50),
+                ),
+                onPressed: () {
+                  if (_formKey.currentState!.validate()) {
+                    final koi = Koi(
+                      id: DateTime.now().toString(),
+                      name: _nameController.text,
+                      variety: _varietyController.text,
+                      size: double.tryParse(_sizeController.text) ?? 0,
+                      age: 0,
+                    );
+                    Navigator.pop(context, koi);
+                  }
+                },
+                child: const Text('Ajouter au bassin'),
+              ),
+            ],
+          ),
         ),
       ),
     );
