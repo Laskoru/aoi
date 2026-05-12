@@ -10,15 +10,14 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-
   cupertino_icons: ^1.0.8
-  
-  # Indispensable pour le formatage des dates (utilisé dans le dashboard et la saisie)
   intl: ^0.19.0
   fl_chart: ^0.66.0         # Pour les graphiques
   shared_preferences: ^2.2.2 # Pour la sauvegarde
   firebase_core: ^3.1.1       # Obligatoire pour Firebase
   cloud_firestore: ^5.0.2     # La base de données Cloud
+  firebase_auth: ^5.1.1      # Ajout pour l'auth
+  google_sign_in: ^6.2.1     # Ajout pour Google
 dev_dependencies:
   flutter_test:
     sdk: flutter
