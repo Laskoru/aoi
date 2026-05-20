@@ -1,36 +1,29 @@
-import 'package:flutter/material.dart';
+// Définition des 3 états possibles pour l'eau
+enum WaterCondition { ideal, warning, danger }
 
 class WaterLogic {
-  static Color getColor(String param, double value) {
-    switch (param) {
-      case 'ph':
-        if (value >= 7.0 && value <= 8.5) return Colors.green;
-        if (value < 6.5 || value > 9.0) return Colors.red;
-        return Colors.orange;
-      case 'nitrite': // NO2 ppm
-        if (value == 0) return Colors.green;
-        if (value > 0.5) return Colors.red;
-        return Colors.orange;
-      case 'nitrate': // NO3 ppm
-        if (value < 25) return Colors.green;
-        if (value > 50) return Colors.red;
-        return Colors.orange;
-      case 'chlorine': // Chlore (doit être à 0)
-        if (value == 0) return Colors.green;
-        return Colors.red;
-      case 'carbonate': // KH ppm (idéal > 100)
-        if (value >= 100) return Colors.green;
-        if (value < 50) return Colors.red;
-        return Colors.orange;
-      default:
-        return Colors.blueGrey;
+  // --- LOGIQUE POUR LE PH ---
+  // Le pH idéal pour un Koï est généralement entre 7.0 et 8.5
+  static WaterCondition checkPhLevel(double ph) {
+    if (ph >= 7.0 && ph <= 8.5) {
+      return WaterCondition.ideal;
+    } else if ((ph >= 6.5 && ph < 7.0) || (ph > 8.5 && ph <= 9.0)) {
+      return WaterCondition.warning; // Limite acceptable mais à surveiller
+    } else {
+      return WaterCondition.danger; // Danger pour les Koï
     }
   }
 
-  static String getStatusText(Color color) {
-    if (color == Colors.green) return "Bon";
-    if (color == Colors.orange) return "Moyen";
-    if (color == Colors.red) return "Mauvais";
-    return "Inconnu";
+  // --- LOGIQUE POUR LA TEMPÉRATURE ---
+  // La température idéale de métabolisme est souvent entre 15°C et 25°C
+  static WaterCondition checkTemperature(double temp) {
+    if (temp >= 15.0 && temp <= 25.0) {
+      return WaterCondition.ideal;
+    } else if ((temp >= 10.0 && temp < 15.0) || (temp > 25.0 && temp <= 28.0)) {
+      return WaterCondition.warning;
+    } else {
+      return WaterCondition
+          .danger; // Trop froid (hibernation/risque) ou trop chaud (manque d'oxygène)
+    }
   }
 }
