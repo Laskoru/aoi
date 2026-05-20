@@ -4,6 +4,7 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/foundation.dart'; // Requis pour Uint8List
+import 'package:intl/intl.dart'; // Requis pour le formatage des dates
 
 class KoiDetailsScreen extends StatelessWidget {
   final String koiId;
@@ -19,16 +20,14 @@ class KoiDetailsScreen extends StatelessWidget {
   Future<void> _pickAndUploadImage(BuildContext context, String docId) async {
     final ImagePicker picker = ImagePicker();
 
-    // Sélection de l'image depuis le smartphone ou le navigateur
     final XFile? pickedFile = await picker.pickImage(
       source: ImageSource.gallery,
-      imageQuality: 60, // Compresse pour le réseau
+      imageQuality: 60,
     );
 
-    if (pickedFile == null) return; // Annulé par l'utilisateur
+    if (pickedFile == null) return;
 
     try {
-      // Affichage de la barre de chargement
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Row(
@@ -42,25 +41,16 @@ class KoiDetailsScreen extends StatelessWidget {
         ),
       );
 
-      // Récupération des données brutes (les bytes), obligatoire pour le Web et parfait pour le mobile
       final Uint8List imageBytes = await pickedFile.readAsBytes();
-
-      // Métadonnées pour indiquer au navigateur qu'il s'agit d'une image JPEG
       final metadata = SettableMetadata(contentType: 'image/jpeg');
-
-      // Création de l'emplacement unique sur Firebase
       final storageRef = FirebaseStorage.instance
           .ref()
           .child('kois_photos')
           .child('$docId.jpg');
 
-      // SOLUTION : Utilisation de putData au lieu de putFile !
       await storageRef.putData(imageBytes, metadata);
-
-      // Récupération du lien de téléchargement
       final String downloadUrl = await storageRef.getDownloadURL();
 
-      // Enregistrement dans le profil de la carpe sur Firestore
       await FirebaseFirestore.instance.collection('kois').doc(docId).update({
         'imageUrl': downloadUrl,
       });
@@ -115,29 +105,24 @@ class KoiDetailsScreen extends StatelessWidget {
             .doc(koiId)
             .snapshots(),
         builder: (context, snapshot) {
-          if (snapshot.hasError) {
+          if (snapshot.hasError)
             return Center(child: Text("Erreur : ${snapshot.error}"));
-          }
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (snapshot.connectionState == ConnectionState.waiting)
             return const Center(child: CircularProgressIndicator());
-          }
-          if (!snapshot.hasData || !snapshot.data!.exists) {
+          if (!snapshot.hasData || snapshot.data!.exists == false)
             return const Center(child: Text("Ce Koï n'existe plus."));
-          }
 
           final data = snapshot.data!.data() as Map<String, dynamic>;
           final String name = data['name'] ?? 'Inconnu';
           final String variety = data['variety'] ?? 'Inconnue';
           final double size = (data['size'] as num? ?? 0).toDouble();
           final int age = (data['age'] as num? ?? 0).toInt();
-          final String? imageUrl =
-              data['imageUrl']; // On récupère l'image si elle existe
+          final String? imageUrl = data['imageUrl'];
 
           return SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             child: Column(
               children: [
-                // En-tête visuel
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 35),
@@ -154,7 +139,6 @@ class KoiDetailsScreen extends StatelessWidget {
                   ),
                   child: Column(
                     children: [
-                      // Avatar interactif cliquable pour l'upload
                       GestureDetector(
                         onTap: () => _pickAndUploadImage(context, koiId),
                         child: Stack(
@@ -207,7 +191,6 @@ class KoiDetailsScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-
                 Padding(
                   padding: const EdgeInsets.all(20.0),
                   child: Column(
@@ -215,7 +198,6 @@ class KoiDetailsScreen extends StatelessWidget {
                     children: [
                       _buildSectionTitle("Caractéristiques Fixes"),
                       const SizedBox(height: 12),
-
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
@@ -249,11 +231,14 @@ class KoiDetailsScreen extends StatelessWidget {
                           ],
                         ),
                       ),
+                      const SizedBox(height: 24),
+
+                      // --- INJECTION DE L'ARBRE GÉNÉALOGIQUE ---
+                      _buildGenealogyTree(context, data),
 
                       const SizedBox(height: 30),
                       _buildSectionTitle("Suivi de la Croissance"),
                       const SizedBox(height: 12),
-
                       Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
@@ -319,13 +304,11 @@ class KoiDetailsScreen extends StatelessWidget {
                           ],
                         ),
                       ),
-
                       const SizedBox(height: 30),
                       _buildSectionTitle("Courbe de croissance"),
                       const SizedBox(height: 12),
-
                       Container(
-                        height: 200,
+                        height: 240,
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -387,6 +370,196 @@ class KoiDetailsScreen extends StatelessWidget {
     );
   }
 
+  // --- WIDGETS DU COMPOSANT GÉNÉALOGIQUE ---
+  Widget _buildGenealogyTree(
+    BuildContext context,
+    Map<String, dynamic> koiData,
+  ) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 20,
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildSectionTitle("Généalogie"),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              Expanded(
+                child: _buildParentBox(
+                  context,
+                  label: "PÈRE",
+                  parentId: koiData['fatherId'],
+                  manualName: koiData['fatherNameManual'],
+                  icon: Icons.male_rounded,
+                  iconColor: Colors.blue[600]!,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildParentBox(
+                  context,
+                  label: "MÈRE",
+                  parentId: koiData['motherId'],
+                  manualName: koiData['motherNameManual'],
+                  icon: Icons.female_rounded,
+                  iconColor: Colors.pink[400]!,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildParentBox(
+    BuildContext context, {
+    required String label,
+    String? parentId,
+    String? manualName,
+    required IconData icon,
+    required Color iconColor,
+  }) {
+    if (parentId == null && manualName != null && manualName.isNotEmpty) {
+      return _parentCardDesign(
+        label,
+        manualName,
+        "Saisie manuelle",
+        icon,
+        iconColor,
+      );
+    }
+
+    if (parentId != null) {
+      return FutureBuilder<DocumentSnapshot>(
+        future: FirebaseFirestore.instance
+            .collection('kois')
+            .doc(parentId)
+            .get(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Padding(
+              padding: EdgeInsets.all(12.0),
+              child: Center(child: LinearProgressIndicator()),
+            );
+          }
+          if (snapshot.hasData && snapshot.data!.exists) {
+            final pData = snapshot.data!.data() as Map<String, dynamic>;
+            return _parentCardDesign(
+              label,
+              pData['name'] ?? 'Inconnu',
+              pData['variety'] ?? 'Variété',
+              icon,
+              iconColor,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => KoiDetailsScreen(
+                      koiId: snapshot.data!.id,
+                      koiData: pData,
+                    ),
+                  ),
+                );
+              },
+            );
+          }
+          return _parentCardDesign(
+            label,
+            "Inconnu",
+            "Introuvable",
+            icon,
+            iconColor,
+          );
+        },
+      );
+    }
+
+    return _parentCardDesign(
+      label,
+      "Non renseigné",
+      "Inconnu",
+      icon,
+      iconColor,
+    );
+  }
+
+  Widget _parentCardDesign(
+    String role,
+    String name,
+    String sub,
+    IconData icon,
+    Color iconColor, {
+    VoidCallback? onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Row(
+          children: [
+            Icon(icon, color: iconColor, size: 20),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    role,
+                    style: const TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF94A3B8),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF0F172A),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    sub,
+                    style: TextStyle(fontSize: 11, color: Colors.grey[500]),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
+            if (onTap != null)
+              const Icon(
+                Icons.chevron_right_rounded,
+                color: Color(0xFF94A3B8),
+                size: 16,
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildGrowthChart(String koiId) {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
@@ -397,18 +570,15 @@ class KoiDetailsScreen extends StatelessWidget {
           .limit(10)
           .snapshots(),
       builder: (context, snapshot) {
-        if (snapshot.hasError) {
+        if (snapshot.hasError)
           return Center(
             child: Text(
               "Erreur : ${snapshot.error}",
               style: const TextStyle(fontSize: 12),
             ),
           );
-        }
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        if (snapshot.connectionState == ConnectionState.waiting)
           return const Center(child: CircularProgressIndicator());
-        }
-
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return const Center(
             child: Text(
@@ -421,38 +591,110 @@ class KoiDetailsScreen extends StatelessWidget {
 
         final docs = snapshot.data!.docs.reversed.toList();
         List<FlSpot> spots = [];
+        List<String> formattedDates = [];
 
         for (int i = 0; i < docs.length; i++) {
           final d = docs[i].data() as Map<String, dynamic>;
           double val = (d['size'] as num).toDouble();
           spots.add(FlSpot(i.toDouble(), val));
+
+          if (d['timestamp'] != null) {
+            final DateTime dateTime = (d['timestamp'] as Timestamp).toDate();
+            formattedDates.add(DateFormat('dd/MM').format(dateTime));
+          } else {
+            formattedDates.add("");
+          }
         }
 
         return LineChart(
           LineChartData(
             gridData: const FlGridData(show: false),
             borderData: FlBorderData(show: false),
-            titlesData: const FlTitlesData(
+            titlesData: FlTitlesData(
               show: true,
-              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles: AxisTitles(
+              topTitles: const AxisTitles(
                 sideTitles: SideTitles(showTitles: false),
               ),
-              bottomTitles: AxisTitles(
+              rightTitles: const AxisTitles(
                 sideTitles: SideTitles(showTitles: false),
+              ),
+              leftTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 35,
+                  getTitlesWidget: (value, meta) {
+                    return Text(
+                      value.toStringAsFixed(1),
+                      style: const TextStyle(
+                        color: Color(0xFF94A3B8),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 10,
+                      ),
+                    );
+                  },
+                ),
+              ),
+              bottomTitles: AxisTitles(
+                sideTitles: SideTitles(
+                  showTitles: true,
+                  reservedSize: 35,
+                  interval: 1,
+                  getTitlesWidget: (value, meta) {
+                    final int index = value.toInt();
+                    if (index >= 0 && index < formattedDates.length) {
+                      return SideTitleWidget(
+                        meta: meta,
+                        space: 10,
+                        child: Text(
+                          formattedDates[index],
+                          style: const TextStyle(
+                            color: Color(0xFF94A3B8),
+                            fontWeight: FontWeight.bold,
+                            fontSize: 10,
+                          ),
+                        ),
+                      );
+                    }
+                    return const Text('');
+                  },
+                ),
+              ),
+            ),
+            lineTouchData: LineTouchData(
+              touchTooltipData: LineTouchTooltipData(
+                getTooltipColor: (touchedSpot) => const Color(0xFF0F172A),
+                getTooltipItems: (touchedSpots) {
+                  return touchedSpots.map((spot) {
+                    return LineTooltipItem(
+                      "${spot.y.toStringAsFixed(1)} cm",
+                      const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    );
+                  }).toList();
+                },
               ),
             ),
             lineBarsData: [
               LineChartBarData(
                 spots: spots,
-                isCurved: spots.length > 1,
+                isCurved: true,
                 color: Colors.blue[900],
                 barWidth: 4,
                 isStrokeCapRound: true,
                 dotData: const FlDotData(show: true),
                 belowBarData: BarAreaData(
                   show: true,
-                  color: Colors.blue[900]!.withValues(alpha: 0.1),
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.blue[900]!.withValues(alpha: 0.1),
+                      Colors.blue[900]!.withValues(alpha: 0.0),
+                    ],
+                  ),
                 ),
               ),
             ],
@@ -539,7 +781,6 @@ class KoiDetailsScreen extends StatelessWidget {
                           .collection('kois')
                           .doc(docId)
                           .update({'size': newSize});
-
                       await FirebaseFirestore.instance
                           .collection('kois')
                           .doc(docId)
@@ -548,10 +789,7 @@ class KoiDetailsScreen extends StatelessWidget {
                             'size': newSize,
                             'timestamp': FieldValue.serverTimestamp(),
                           });
-
-                      if (context.mounted) {
-                        Navigator.pop(context);
-                      }
+                      if (context.mounted) Navigator.pop(context);
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(

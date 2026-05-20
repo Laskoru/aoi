@@ -32,7 +32,7 @@ class DashboardScreen extends StatelessWidget {
                   backgroundColor: const Color(0xFFF8FAFC),
                   surfaceTintColor: Colors.transparent,
                   title: Text(
-                    'AOI BASIN',
+                    'AOI KOI',
                     style: TextStyle(
                       fontWeight: FontWeight.w900,
                       letterSpacing: 1.5,
@@ -258,17 +258,19 @@ class DashboardScreen extends StatelessWidget {
                   border: Border.all(color: const Color(0xFFF1F5F9), width: 1),
                 ),
                 child: Container(
-                  // Un dégradé noir transparent est appliqué par-dessus l'image pour que le texte blanc reste lisible
+                  // Applique un dégradé pour garantir la lisibilité du texte
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(24),
                     gradient: LinearGradient(
                       begin: Alignment.topCenter,
                       end: Alignment.bottomCenter,
                       colors: [
-                        Colors.black.withValues(alpha: 0.05),
                         Colors.black.withValues(
-                          alpha: 0.75,
-                        ), // Plus sombre en bas pour le contraste du texte
+                          alpha: imageUrl != null ? 0.05 : 0.0,
+                        ),
+                        Colors.black.withValues(
+                          alpha: imageUrl != null ? 0.75 : 0.0,
+                        ),
                       ],
                       stops: const [0.5, 1.0],
                     ),
@@ -288,9 +290,7 @@ class DashboardScreen extends StatelessWidget {
                           ),
                           decoration: BoxDecoration(
                             color: imageUrl != null
-                                ? Colors.black.withValues(
-                                    alpha: 0.4,
-                                  ) // Sombre si fond image
+                                ? Colors.black.withValues(alpha: 0.4)
                                 : Colors.blue[900]!.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(100),
                           ),
@@ -307,13 +307,15 @@ class DashboardScreen extends StatelessWidget {
                         ),
                       ),
 
-                      // Si pas d'image, on affiche une icône discrète au centre
+                      // Si pas d'image, on affiche une icône centrée pour boucher le vide
                       if (imageUrl == null)
-                        Center(
-                          child: Icon(
-                            Icons.pets_rounded,
-                            color: Colors.blue[200],
-                            size: 32,
+                        const Expanded(
+                          child: Center(
+                            child: Icon(
+                              Icons.pets_rounded,
+                              color: Color(0xFFBFDBFE), // Bleu clair discret
+                              size: 40,
+                            ),
                           ),
                         ),
 
@@ -409,7 +411,7 @@ class DashboardScreen extends StatelessWidget {
 
   Widget _buildChartCard(String userId, String field, Color color) {
     return Container(
-      height: 200,
+      height: 240,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
