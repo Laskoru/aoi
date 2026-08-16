@@ -1,11 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:intl/intl.dart'; // Pour formater les dates proprement
+import 'package:intl/intl.dart';
+import '../theme/app_palette.dart';
+import '../theme/app_theme.dart';
 
+/// Courbe d'un paramètre de l'eau sur les derniers relevés.
 class WaterChart extends StatelessWidget {
   final String userId;
-  final String field; // "ph" ou "temperature"
+
+  /// Nom du champ Firestore à tracer : `ph` ou `temperature`.
+  final String field;
   final Color color;
 
   const WaterChart({
@@ -17,54 +22,58 @@ class WaterChart extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('measurements')
           .where('userId', isEqualTo: userId)
           .orderBy('timestamp', descending: true)
-          .limit(7) // On limite à 7 points pour la lisibilité
+          .limit(7) // Sept points suffisent à lire une tendance.
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return const Center(
+          return Center(
             child: Text(
               "Aucune donnée pour le moment",
-              style: TextStyle(
-                color: Color(0xFF94A3B8),
-                fontSize: 13,
-              ), // Correction Colors.slate
+              style: context.texts.bodyMedium,
             ),
           );
         }
 
-        // Inversion pour afficher chronologiquement de gauche à droite
+        // Inversion pour lire chronologiquement, de gauche à droite.
         final docs = snapshot.data!.docs.reversed.toList();
 
-        List<FlSpot> spots = [];
-        List<String> formattedDates = [];
+        final spots = <FlSpot>[];
+        final labels = <String>[];
 
         for (int i = 0; i < docs.length; i++) {
           final data = docs[i].data() as Map<String, dynamic>;
+          spots.add(FlSpot(i.toDouble(), (data[field] as num? ?? 0).toDouble()));
 
-          final double value = (data[field] as num? ?? 0.0).toDouble();
-          spots.add(FlSpot(i.toDouble(), value));
-
-          if (data['timestamp'] != null) {
-            final DateTime dateTime = (data['timestamp'] as Timestamp).toDate();
-            formattedDates.add(DateFormat('dd/MM').format(dateTime));
-          } else {
-            formattedDates.add("");
-          }
+          final timestamp = data['timestamp'] as Timestamp?;
+          labels.add(
+            timestamp == null ? "" : DateFormat('dd/MM').format(timestamp.toDate()),
+          );
         }
+
+        final axisStyle = context.texts.labelSmall?.copyWith(
+          fontWeight: FontWeight.bold,
+          letterSpacing: 0,
+        );
 
         return LineChart(
           LineChartData(
-            gridData: const FlGridData(show: false), // Design épuré sans grille
+            gridData: FlGridData(
+              show: true,
+              drawVerticalLine: false,
+              getDrawingHorizontalLine: (_) =>
+                  FlLine(color: colors.outlineVariant, strokeWidth: 1),
+            ),
             borderData: FlBorderData(show: false),
-
             titlesData: FlTitlesData(
               show: true,
               topTitles: const AxisTitles(
@@ -73,93 +82,75 @@ class WaterChart extends StatelessWidget {
               rightTitles: const AxisTitles(
                 sideTitles: SideTitles(showTitles: false),
               ),
-
-              // AXE DE GAUCHE : Valeurs numériques
               leftTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
                   reservedSize: 35,
-                  getTitlesWidget: (value, meta) {
-                    return Text(
-                      value.toStringAsFixed(1),
-                      style: const TextStyle(
-                        color: Color(0xFF94A3B8),
-                        fontWeight: FontWeight.w600,
-                        fontSize: 10,
-                      ),
-                    );
-                  },
+                  getTitlesWidget: (value, meta) =>
+                      Text(value.toStringAsFixed(1), style: axisStyle),
                 ),
               ),
-
-              // AXE DU BAS : Affichage et ajustement des vraies dates
               bottomTitles: AxisTitles(
                 sideTitles: SideTitles(
                   showTitles: true,
-                  reservedSize:
-                      35, // Espace suffisant pour ne pas masquer le texte
+                  reservedSize: 32,
                   interval: 1,
                   getTitlesWidget: (value, meta) {
-                    final int index = value.toInt();
-                    if (index >= 0 && index < formattedDates.length) {
-                      return SideTitleWidget(
-                        meta: meta,
-                        space: 10,
-                        child: Text(
-                          formattedDates[index],
-                          style: const TextStyle(
-                            color: Color(0xFF94A3B8),
-                            fontWeight: FontWeight.bold,
-                            fontSize: 10,
-                          ),
-                        ),
-                      );
+                    final index = value.toInt();
+                    if (index < 0 || index >= labels.length) {
+                      return const SizedBox.shrink();
                     }
-                    return const Text('');
+                    return SideTitleWidget(
+                      meta: meta,
+                      space: 10,
+                      child: Text(labels[index], style: axisStyle),
+                    );
                   },
                 ),
               ),
             ),
-
-            // Boîte d'infos au clic sur un point
             lineTouchData: LineTouchData(
               touchTooltipData: LineTouchTooltipData(
-                getTooltipColor: (touchedSpot) => const Color(
-                  0xFF0F172A,
-                ), // Nouvelle syntaxe getTooltipColor requise
-                getTooltipItems: (touchedSpots) {
-                  return touchedSpots.map((spot) {
-                    return LineTooltipItem(
-                      "${spot.y.toStringAsFixed(1)} ${field == 'temperature' ? '°C' : ''}",
-                      const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
+                getTooltipColor: (_) => colors.inverseSurface,
+                getTooltipItems: (touchedSpots) => touchedSpots
+                    .map(
+                      (spot) => LineTooltipItem(
+                        "${spot.y.toStringAsFixed(1)}${field == 'temperature' ? ' °C' : ''}",
+                        TextStyle(
+                          color: colors.onInverseSurface,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
                       ),
-                    );
-                  }).toList();
-                },
+                    )
+                    .toList(),
               ),
             ),
-
-            // Ligne et courbe du graphique
             lineBarsData: [
               LineChartBarData(
                 spots: spots,
-                isCurved: true, // Courbe lissée active
+                isCurved: true,
+                curveSmoothness: 0.28,
                 color: color,
-                barWidth: 4,
+                barWidth: 3.5,
                 isStrokeCapRound: true,
-                dotData: const FlDotData(
+                dotData: FlDotData(
                   show: true,
-                ), // Points activés simplement sans paramètres obsolètes
+                  getDotPainter: (spot, percent, bar, index) =>
+                      FlDotCirclePainter(
+                        radius: 3.5,
+                        color: colors.surface,
+                        strokeWidth: 2.5,
+                        strokeColor: color,
+                      ),
+                ),
                 belowBarData: BarAreaData(
                   show: true,
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
                     colors: [
-                      color.withValues(alpha: 0.2),
+                      color.withValues(alpha: 0.22),
                       color.withValues(alpha: 0.0),
                     ],
                   ),
@@ -169,6 +160,42 @@ class WaterChart extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Conteneur commun aux graphiques : hauteur fixe, surface de carte, titre.
+class ChartCard extends StatelessWidget {
+  final Widget child;
+  final double height;
+
+  const ChartCard({super.key, required this.child, this.height = 230});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+
+    return Container(
+      height: height,
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.lg,
+        AppSpacing.lg,
+        AppSpacing.md,
+      ),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+        border: Border.all(color: colors.outlineVariant),
+        boxShadow: [
+          BoxShadow(
+            color: colors.shadow.withValues(alpha: context.isDark ? 0.30 : 0.03),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: child,
     );
   }
 }

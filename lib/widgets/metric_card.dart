@@ -1,35 +1,44 @@
 import 'package:flutter/material.dart';
+import '../theme/app_palette.dart';
+import '../theme/app_theme.dart';
+import '../theme/pond_status.dart';
+import '../utils/water_logic.dart';
 
+/// Carte d'un paramètre de l'eau : la valeur en gros, l'état en couleur.
+///
+/// La couleur et le libellé de l'état viennent de [WaterConditionStyle] : la
+/// carte ne décide de rien, elle affiche.
 class MetricCard extends StatelessWidget {
   final String title;
   final String value;
   final String unit;
-  final Color color;
   final IconData icon;
-  final String statusText; // "Idéal", "Attention", "Danger"
+  final WaterCondition condition;
 
   const MetricCard({
     super.key,
     required this.title,
     required this.value,
     required this.unit,
-    required this.color,
     required this.icon,
-    this.statusText = "Idéal",
+    required this.condition,
   });
 
   @override
   Widget build(BuildContext context) {
+    final colors = context.colors;
+    final statusColor = condition.color(context);
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: colors.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3), width: 1),
+        border: Border.all(color: statusColor.withValues(alpha: 0.35)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
+            color: colors.shadow.withValues(alpha: context.isDark ? 0.30 : 0.04),
+            blurRadius: 12,
             offset: const Offset(0, 4),
           ),
         ],
@@ -40,42 +49,49 @@ class MetricCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(icon, color: color, size: 24),
+              Icon(icon, color: statusColor, size: 22),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  color: condition.surface(context),
+                  borderRadius: BorderRadius.circular(AppRadius.chip),
                 ),
                 child: Text(
-                  statusText,
+                  condition.label,
                   style: TextStyle(
-                    color: color,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
+                    color: statusColor,
+                    fontSize: 9.5,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.5,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Text(title, style: TextStyle(color: Colors.grey[600], fontSize: 13)),
-          const SizedBox(height: 4),
+          const SizedBox(height: 14),
+          Text(title, style: context.texts.labelMedium),
+          const SizedBox(height: AppSpacing.xs),
           RichText(
             text: TextSpan(
               children: [
                 TextSpan(
                   text: value,
-                  style: const TextStyle(
-                    fontSize: 24,
+                  style: TextStyle(
+                    fontSize: 26,
                     fontWeight: FontWeight.bold,
-                    color: Colors.black,
+                    letterSpacing: -1,
+                    color: colors.onSurface,
                   ),
                 ),
-                TextSpan(
-                  text: " $unit",
-                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
-                ),
+                if (unit.isNotEmpty)
+                  TextSpan(
+                    text: " $unit",
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: colors.onSurfaceVariant,
+                    ),
+                  ),
               ],
             ),
           ),

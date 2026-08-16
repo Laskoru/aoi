@@ -1,39 +1,45 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
   <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
+    Chemin de base de l'application. Remplacé au build par la valeur de
+    l'argument `--base-href` passé à `flutter build web`.
   -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="Le carnet de votre bassin : suivi des carpes koï, croissance, généalogie et qualité de l'eau.">
 
-  <!-- iOS meta tags & icons -->
+  <!--
+    viewport-fit=cover laisse l'application s'étendre sous l'encoche et la barre
+    d'accueil de l'iPhone ; les SafeArea de Flutter reprennent la main à
+    l'intérieur.
+  -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+  <!-- Ajout à l'écran d'accueil, iOS et Android -->
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="aoi">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="AOI KOI">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
-  <!-- Favicon -->
+  <!-- Teinte de la barre système, accordée au thème clair et au thème sombre -->
+  <meta name="theme-color" content="#F8F5F0" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121417" media="(prefers-color-scheme: dark)">
+
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>aoi</title>
+  <title>AOI KOI</title>
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <!--
+    La connexion Google passe par Firebase Auth, qui mène le flux sur son
+    propre domaine : la bibliothèque Google Identity Services n'est plus
+    chargée ici, et aucune origine JavaScript n'a besoin d'être déclarée.
+  -->
   <script src="flutter_bootstrap.js" async></script>
-  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </body>
 </html>

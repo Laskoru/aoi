@@ -4,8 +4,15 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'add_koi_screen.dart';
 import 'add_measurement_screen.dart';
 import 'koi_details_screen.dart';
-import '../widgets/metric_card.dart';
+import '../models/koi.dart';
+import '../models/water_measurement.dart';
+import '../services/auth_service.dart';
+import '../theme/app_palette.dart';
+import '../theme/app_theme.dart';
+import '../theme/app_widgets.dart';
+import '../theme/pond_status.dart';
 import '../utils/water_logic.dart';
+import '../widgets/metric_card.dart';
 import '../widgets/water_chart.dart';
 
 class DashboardScreen extends StatelessWidget {
@@ -15,185 +22,301 @@ class DashboardScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final User? user = FirebaseAuth.instance.currentUser;
 
+    if (user == null) {
+      return const Scaffold(body: Center(child: Text("Session expirée")));
+    }
+
     return Scaffold(
-      backgroundColor: const Color(
-        0xFFF8FAFC,
-      ), // Fond ultra-propre style iOS/Android
-      body: user == null
-          ? const Center(child: Text("Session expirée"))
-          : CustomScrollView(
-              physics: const BouncingScrollPhysics(),
-              slivers: [
-                // AppBar moderne et épurée
-                SliverAppBar(
-                  floating: true,
-                  pinned: false,
-                  elevation: 0,
-                  backgroundColor: const Color(0xFFF8FAFC),
-                  surfaceTintColor: Colors.transparent,
-                  title: Text(
-                    'AOI KOI',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: 1.5,
-                      fontSize: 16,
-                      color: Colors.blue[900],
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          _buildAppBar(context, user),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                0,
+                AppSpacing.lg,
+                100,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildGreeting(context, user),
+                  const SizedBox(height: AppSpacing.lg),
+
+                  // Synthèse de l'eau, avant tout le reste : c'est ce qui peut
+                  // demander une action immédiate.
+                  _buildPondBanner(user.uid),
+                  const SizedBox(height: AppSpacing.xl),
+
+                  SectionHeader(
+                    title: "Ma collection",
+                    icon: Icons.auto_awesome_mosaic_rounded,
+                    trailing: IconButton(
+                      icon: const Icon(Icons.add_circle_rounded, size: 28),
+                      color: context.colors.secondary,
+                      tooltip: "Ajouter un koï",
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AddKoiScreen()),
+                      ),
                     ),
                   ),
-                  centerTitle: true,
-                  actions: [
-                    IconButton(
-                      icon: Icon(Icons.logout_rounded, color: Colors.blue[900]),
-                      onPressed: () => FirebaseAuth.instance.signOut(),
-                    ),
-                  ],
-                ),
+                  const SizedBox(height: AppSpacing.md),
+                  _buildKoiGrid(user.uid),
 
-                // Contenu Principal
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // 1. Bienvenue
-                        _buildHeader(user),
-                        const SizedBox(height: 30),
+                  const SizedBox(height: AppSpacing.xl),
+                  const SectionHeader(
+                    title: "Paramètres du bassin",
+                    icon: Icons.water_drop_rounded,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  _buildWaterMonitor(user.uid),
 
-                        // 2. SECTION PRINCIPALE : LES KOÏ EN PREMIER
-                        _buildSectionHeader(
-                          "Ma Collection",
-                          Icons.auto_awesome_mosaic_rounded,
-                          trailing: IconButton(
-                            icon: Icon(
-                              Icons.add_circle_outline_rounded,
-                              color: Colors.blue[900],
-                              size: 26,
-                            ),
-                            onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const AddKoiScreen(),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-                        _buildKoiGrid(user.uid),
-
-                        const SizedBox(height: 35),
-
-                        // 3. Section Environnement & Eau
-                        _buildSectionHeader(
-                          "Paramètres du Bassin",
-                          Icons.water_drop_rounded,
-                        ),
-                        const SizedBox(height: 15),
-                        _buildWaterMonitor(user.uid),
-
-                        const SizedBox(height: 30),
-
-                        // 4. Graphiques d'analyses
-                        _buildSectionHeader(
-                          "Analyses pH",
-                          Icons.analytics_rounded,
-                        ),
-                        const SizedBox(height: 15),
-                        _buildChartCard(
-                          user.uid,
-                          "ph",
-                          const Color(0xFF10B981),
-                        ), // Vert Émeraude corrigé
-
-                        const SizedBox(height: 25),
-
-                        _buildSectionHeader(
-                          "Suivi Température",
-                          Icons.thermostat_rounded,
-                        ),
-                        const SizedBox(height: 15),
-                        _buildChartCard(user.uid, "temperature", Colors.orange),
-                      ],
+                  const SizedBox(height: AppSpacing.xl),
+                  const SectionHeader(
+                    title: "Évolution du pH",
+                    icon: Icons.analytics_rounded,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  ChartCard(
+                    child: WaterChart(
+                      userId: user.uid,
+                      field: "ph",
+                      color: context.colors.tertiary,
                     ),
                   ),
-                ),
-              ],
+
+                  const SizedBox(height: AppSpacing.lg),
+                  const SectionHeader(
+                    title: "Suivi de la température",
+                    icon: Icons.thermostat_rounded,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  ChartCard(
+                    child: WaterChart(
+                      userId: user.uid,
+                      field: "temperature",
+                      color: context.colors.secondary,
+                    ),
+                  ),
+                ],
+              ),
             ),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const AddMeasurementScreen()),
+          MaterialPageRoute(builder: (_) => const AddMeasurementScreen()),
         ),
-        backgroundColor: Colors.blue[900],
-        elevation: 3,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        icon: const Icon(Icons.speed_rounded, color: Colors.white),
+        backgroundColor: context.colors.primary,
+        foregroundColor: context.colors.onPrimary,
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.field),
+        ),
+        icon: const Icon(Icons.speed_rounded),
         label: const Text(
-          "Nouvelle Mesure",
-          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+          "Nouvelle mesure",
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
     );
   }
 
-  // --- COMPOSANTS DE STYLE ---
+  // --- En-tête ---
 
-  Widget _buildHeader(User user) {
-    final String firstName = (user.displayName ?? "Passionné").split(' ').first;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          "Bienvenue dans ton écosystème,",
+  Widget _buildAppBar(BuildContext context, User user) {
+    final colors = context.colors;
+
+    return SliverAppBar(
+      floating: true,
+      elevation: 0,
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      surfaceTintColor: Colors.transparent,
+      centerTitle: true,
+      title: RichText(
+        text: TextSpan(
           style: TextStyle(
-            fontSize: 14,
-            color: Color(0xFF94A3B8),
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 2,
+            fontSize: 15,
+            color: colors.onSurface,
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          firstName,
-          style: const TextStyle(
-            fontSize: 32,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFF0F172A),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSectionHeader(String title, IconData icon, {Widget? trailing}) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Row(
           children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.blue[50],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Icon(icon, size: 18, color: Colors.blue[900]),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1E293B),
-                letterSpacing: -0.5,
-              ),
+            const TextSpan(text: "AOI "),
+            TextSpan(
+              text: "KOI",
+              style: TextStyle(color: colors.secondary),
             ),
           ],
         ),
-        if (trailing != null) trailing,
+      ),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.logout_rounded),
+          color: colors.onSurfaceVariant,
+          tooltip: "Se déconnecter",
+          onPressed: AuthService.signOut,
+        ),
       ],
     );
   }
+
+  Widget _buildGreeting(BuildContext context, User user) {
+    final String firstName = (user.displayName ?? "Passionné").split(' ').first;
+    final photoUrl = user.photoURL;
+
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("Bienvenue dans ton écosystème,", style: context.texts.bodyMedium),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                firstName,
+                style: context.texts.displaySmall,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+        if (photoUrl != null)
+          Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: context.colors.outline, width: 2),
+            ),
+            child: CircleAvatar(
+              radius: 22,
+              backgroundImage: NetworkImage(photoUrl),
+              backgroundColor: context.colors.surfaceContainerHigh,
+            ),
+          ),
+      ],
+    );
+  }
+
+  // --- Synthèse de l'eau ---
+
+  /// Bandeau qui résume l'état du bassin d'un coup d'œil, en retenant le plus
+  /// préoccupant des paramètres relevés.
+  Widget _buildPondBanner(String uid) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: _latestMeasurementStream(uid),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return const SizedBox.shrink();
+        }
+
+        final measurement = WaterMeasurement.fromFirestore(
+          snapshot.data!.docs.first,
+        );
+        final condition = worstCondition([
+          WaterLogic.checkPhLevel(measurement.ph),
+          WaterLogic.checkTemperature(measurement.temperature),
+        ]);
+
+        final color = condition.color(context);
+
+        return Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            color: condition.surface(context),
+            borderRadius: BorderRadius.circular(AppRadius.field),
+            border: Border.all(color: color.withValues(alpha: 0.28)),
+          ),
+          child: Row(
+            children: [
+              Icon(condition.icon, color: color, size: 22),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      condition == WaterCondition.ideal
+                          ? "Bassin en bonne santé"
+                          : "Le bassin demande votre attention",
+                      style: context.texts.labelLarge?.copyWith(color: color),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(condition.advice, style: context.texts.bodyMedium),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Stream<QuerySnapshot> _latestMeasurementStream(String uid) {
+    return FirebaseFirestore.instance
+        .collection('measurements')
+        .where('userId', isEqualTo: uid)
+        .orderBy('timestamp', descending: true)
+        .limit(1)
+        .snapshots();
+  }
+
+  Widget _buildWaterMonitor(String uid) {
+    return StreamBuilder<QuerySnapshot>(
+      stream: _latestMeasurementStream(uid),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return EmptyState(
+            icon: Icons.science_rounded,
+            title: "Aucune analyse d'eau",
+            message:
+                "Enregistrez votre premier relevé pour suivre la qualité du bassin.",
+            actionLabel: "Ajouter une mesure",
+            onAction: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AddMeasurementScreen()),
+            ),
+          );
+        }
+
+        final measurement = WaterMeasurement.fromFirestore(
+          snapshot.data!.docs.first,
+        );
+
+        return Row(
+          children: [
+            Expanded(
+              child: MetricCard(
+                title: "pH",
+                value: measurement.ph.toStringAsFixed(1),
+                unit: "",
+                icon: Icons.science_rounded,
+                condition: WaterLogic.checkPhLevel(measurement.ph),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: MetricCard(
+                title: "Température",
+                value: measurement.temperature.toStringAsFixed(1),
+                unit: "°C",
+                icon: Icons.device_thermostat_rounded,
+                condition: WaterLogic.checkTemperature(measurement.temperature),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // --- Collection ---
 
   Widget _buildKoiGrid(String uid) {
     return StreamBuilder<QuerySnapshot>(
@@ -204,308 +327,213 @@ class DashboardScreen extends StatelessWidget {
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(
+            child: Padding(
+              padding: EdgeInsets.all(AppSpacing.lg),
+              child: CircularProgressIndicator(),
+            ),
+          );
         }
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return _buildEmptyState(context);
+          return EmptyState(
+            icon: Icons.waves_rounded,
+            title: "Votre collection est vide",
+            message:
+                "Ajoutez vos premières carpes koï pour suivre leur croissance et leur lignée.",
+            actionLabel: "Ajouter un koï",
+            onAction: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const AddKoiScreen()),
+            ),
+          );
         }
 
-        final kois = snapshot.data!.docs;
+        final kois = snapshot.data!.docs.map(Koi.fromFirestore).toList();
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
             crossAxisCount: 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            childAspectRatio:
-                0.85, // Maintient une belle proportion rectangulaire
+            crossAxisSpacing: AppSpacing.md,
+            mainAxisSpacing: AppSpacing.md,
+            childAspectRatio: 0.78,
           ),
           itemCount: kois.length,
-          itemBuilder: (context, index) {
-            final koiData = kois[index].data() as Map<String, dynamic>;
-            final String name = koiData['name'] ?? 'Inconnu';
-            final String variety = koiData['variety'] ?? 'Variété';
-            final double size = (koiData['size'] as num? ?? 0).toDouble();
-            final String? imageUrl = koiData['imageUrl'];
+          itemBuilder: (context, index) => _KoiCard(koi: kois[index]),
+        );
+      },
+    );
+  }
+}
 
-            return GestureDetector(
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) =>
-                      KoiDetailsScreen(koiId: kois[index].id, koiData: koiData),
+/// Vignette d'un koï dans la grille : sa photo en fond, ses repères par-dessus.
+class _KoiCard extends StatelessWidget {
+  final Koi koi;
+
+  const _KoiCard({required this.koi});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final hasImage = koi.imageUrl != null;
+
+    // Sur photo, le texte passe en blanc au-dessus d'un voile sombre ; sans
+    // photo, il reprend les couleurs normales de la carte.
+    final Color primaryText = hasImage ? Colors.white : colors.onSurface;
+    final Color secondaryText = hasImage
+        ? Colors.white.withValues(alpha: 0.8)
+        : colors.onSurfaceVariant;
+
+    return GestureDetector(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => KoiDetailsScreen(koiId: koi.id, initialKoi: koi),
+        ),
+      ),
+      child: Container(
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          border: Border.all(color: colors.outlineVariant),
+          boxShadow: [
+            BoxShadow(
+              color: colors.shadow.withValues(
+                alpha: context.isDark ? 0.35 : 0.05,
+              ),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (hasImage)
+              Image.network(
+                koi.imageUrl!,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                    _placeholder(context),
+              )
+            else
+              _placeholder(context),
+
+            // Voile dégradé : sans lui, un nom clair sur une écaille claire
+            // devient illisible.
+            if (hasImage)
+              DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.1),
+                      Colors.black.withValues(alpha: 0.78),
+                    ],
+                    stops: const [0.42, 1.0],
+                  ),
                 ),
               ),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(24),
-                  image: imageUrl != null
-                      ? DecorationImage(
-                          image: NetworkImage(imageUrl),
-                          fit: BoxFit
-                              .cover, // L'image remplit proprement toute la carte
-                        )
-                      : null,
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF0F172A).withValues(alpha: 0.04),
-                      blurRadius: 16,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                  border: Border.all(color: const Color(0xFFF1F5F9), width: 1),
-                ),
-                child: Container(
-                  // Applique un dégradé pour garantir la lisibilité du texte
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(24),
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.black.withValues(
-                          alpha: imageUrl != null ? 0.05 : 0.0,
-                        ),
-                        Colors.black.withValues(
-                          alpha: imageUrl != null ? 0.75 : 0.0,
-                        ),
-                      ],
-                      stops: const [0.5, 1.0],
-                    ),
-                  ),
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+
+            Padding(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      // Badge de taille en haut à droite
-                      Align(
-                        alignment: Alignment.topRight,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: imageUrl != null
-                                ? Colors.black.withValues(alpha: 0.4)
-                                : Colors.blue[900]!.withValues(alpha: 0.08),
-                            borderRadius: BorderRadius.circular(100),
-                          ),
-                          child: Text(
-                            "$size cm",
-                            style: TextStyle(
-                              color: imageUrl != null
-                                  ? Colors.white
-                                  : Colors.blue[900],
-                              fontWeight: FontWeight.bold,
-                              fontSize: 11,
-                            ),
-                          ),
-                        ),
+                      StatusPill(
+                        label: "${koi.size.toStringAsFixed(0)} CM",
+                        color: hasImage ? Colors.white : colors.primary,
+                        background: hasImage
+                            ? Colors.black.withValues(alpha: 0.35)
+                            : colors.primaryContainer,
                       ),
-
-                      // Si pas d'image, on affiche une icône centrée pour boucher le vide
-                      if (imageUrl == null)
-                        const Expanded(
-                          child: Center(
-                            child: Icon(
-                              Icons.pets_rounded,
-                              color: Color(0xFFBFDBFE), // Bleu clair discret
-                              size: 40,
-                            ),
-                          ),
+                      const Spacer(),
+                      if (koi.status != KoiStatus.alive)
+                        StatusPill(
+                          label: koi.status.label.toUpperCase(),
+                          color: hasImage ? Colors.white : colors.onSurfaceVariant,
+                          background: hasImage
+                              ? Colors.black.withValues(alpha: 0.35)
+                              : colors.surfaceContainerHigh,
                         ),
-
-                      // Textes en bas de la carte
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            name,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                              color: imageUrl != null
-                                  ? Colors.white
-                                  : const Color(0xFF0F172A),
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                    ],
+                  ),
+                  const Spacer(),
+                  Text(
+                    koi.name,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 17,
+                      letterSpacing: -0.3,
+                      color: primaryText,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 1),
+                  Text(
+                    koi.variety.isEmpty ? "Variété inconnue" : koi.variety,
+                    style: TextStyle(
+                      color: secondaryText,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 5),
+                  Row(
+                    children: [
+                      Icon(Icons.cake_rounded, size: 11, color: secondaryText),
+                      const SizedBox(width: 4),
+                      Expanded(
+                        child: Text(
+                          koi.ageLabel(),
+                          style: TextStyle(
+                            color: secondaryText,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w500,
                           ),
-                          const SizedBox(height: 2),
-                          Text(
-                            variety,
-                            style: TextStyle(
-                              color: imageUrl != null
-                                  ? Colors.white.withValues(alpha: 0.75)
-                                  : const Color(0xFF94A3B8),
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-  }
-
-  Widget _buildWaterMonitor(String uid) {
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('measurements')
-          .where('userId', isEqualTo: uid)
-          .orderBy('timestamp', descending: true)
-          .limit(1)
-          .snapshots(),
-      builder: (context, snapshot) {
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-          return _buildInfoCard(
-            "Aucune mesure d'eau. Enregistrez votre première analyse.",
-          );
-        }
-
-        final data = snapshot.data!.docs.first.data() as Map<String, dynamic>;
-        final double ph = (data['ph'] as num).toDouble();
-        final double temp = (data['temperature'] as num).toDouble();
-
-        return Row(
-          children: [
-            Expanded(
-              child: MetricCard(
-                title: "pH",
-                value: ph.toStringAsFixed(1),
-                unit: "",
-                icon: Icons.science_rounded,
-                color: _getStatusColor(WaterLogic.checkPhLevel(ph)),
-                statusText: _getStatusLabel(WaterLogic.checkPhLevel(ph)),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: MetricCard(
-                title: "Temp",
-                value: temp.toStringAsFixed(1),
-                unit: "°C",
-                icon: Icons.device_thermostat_rounded,
-                color: _getStatusColor(WaterLogic.checkTemperature(temp)),
-                statusText: _getStatusLabel(WaterLogic.checkTemperature(temp)),
+                ],
               ),
             ),
           ],
-        );
-      },
+        ),
+      ),
     );
   }
 
-  Widget _buildChartCard(String userId, String field, Color color) {
-    return Container(
-      height: 240,
-      padding: const EdgeInsets.all(16),
+  /// Fond des fiches sans photo : un dégradé d'eau et la silhouette d'un koï.
+  Widget _placeholder(BuildContext context) {
+    final colors = context.colors;
+    return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF0F172A).withValues(alpha: 0.02),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-        border: Border.all(color: const Color(0xFFF1F5F9), width: 1),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            colors.primaryContainer,
+            colors.primaryContainer.withValues(alpha: 0.4),
+          ],
+        ),
       ),
-      child: WaterChart(userId: userId, field: field, color: color),
-    );
-  }
-
-  Widget _buildEmptyState(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(30),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFF1F5F9), width: 1),
-      ),
-      child: Column(
-        children: [
-          Icon(Icons.waves_rounded, size: 40, color: Colors.blue[200]),
-          const SizedBox(height: 12),
-          const Text(
-            "Votre collection est vide",
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF1E293B),
-            ),
-          ),
-          const SizedBox(height: 4),
-          const Text(
-            "Ajoutez vos premières carpes Koï pour commencer le suivi.",
-            style: TextStyle(color: Color(0xFF94A3B8), fontSize: 12),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 15),
-          ElevatedButton(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const AddKoiScreen()),
-            ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue[900],
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 0,
-            ),
-            child: const Text("Ajouter un Koï"),
-          ),
-        ],
+      child: Center(
+        child: Icon(
+          Icons.set_meal_rounded,
+          size: 44,
+          color: colors.primary.withValues(alpha: 0.35),
+        ),
       ),
     );
-  }
-
-  Widget _buildInfoCard(String text) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: const Color(0xFFF1F5F9), width: 1),
-      ),
-      child: Text(
-        text,
-        textAlign: TextAlign.center,
-        style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
-      ),
-    );
-  }
-
-  Color _getStatusColor(WaterCondition condition) {
-    if (condition == WaterCondition.ideal) {
-      return const Color(0xFF10B981); // Émeraude
-    }
-    if (condition == WaterCondition.warning) {
-      return const Color(0xFFF59E0B); // Ambre
-    }
-    return const Color(0xFFEF4444); // Corail
-  }
-
-  String _getStatusLabel(WaterCondition condition) {
-    if (condition == WaterCondition.ideal) return "SAIN";
-    if (condition == WaterCondition.warning) return "ALERTE";
-    return "DANGER";
   }
 }
