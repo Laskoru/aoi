@@ -4,6 +4,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_theme.dart';
+import '../theme/app_widgets.dart';
 
 /// Courbe d'un paramètre de l'eau sur les derniers relevés.
 class WaterChart extends StatelessWidget {
@@ -32,6 +33,9 @@ class WaterChart extends StatelessWidget {
           .limit(7) // Sept points suffisent à lire une tendance.
           .snapshots(),
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Center(child: ErrorState(error: snapshot.error));
+        }
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }

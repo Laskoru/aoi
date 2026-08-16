@@ -41,6 +41,19 @@ extension WaterConditionStyle on WaterCondition {
   };
 }
 
+/// Icône associée à chaque paramètre suivi.
+extension WaterParameterStyle on WaterParameter {
+  IconData get icon => switch (this) {
+    WaterParameter.ph => Icons.science_rounded,
+    WaterParameter.temperature => Icons.device_thermostat_rounded,
+    WaterParameter.ammonia => Icons.dangerous_rounded,
+    WaterParameter.nitrite => Icons.warning_amber_rounded,
+    WaterParameter.nitrate => Icons.grass_rounded,
+    WaterParameter.kh => Icons.shield_moon_rounded,
+    WaterParameter.gh => Icons.opacity_rounded,
+  };
+}
+
 /// Retient l'état le plus préoccupant d'une série de mesures : c'est lui qui
 /// résume la santé du bassin.
 WaterCondition worstCondition(Iterable<WaterCondition> conditions) {
@@ -48,6 +61,21 @@ WaterCondition worstCondition(Iterable<WaterCondition> conditions) {
   for (final condition in conditions) {
     if (condition == WaterCondition.danger) return WaterCondition.danger;
     if (condition == WaterCondition.warning) worst = WaterCondition.warning;
+  }
+  return worst;
+}
+
+/// Le relevé le plus préoccupant d'une mesure, s'il y en a un hors plage.
+/// C'est lui qu'on nomme dans le bandeau de synthèse : dire « les nitrites
+/// sont trop hauts » vaut mieux que « un paramètre est hors plage ».
+WaterReading? mostConcerningReading(List<WaterReading> readings) {
+  WaterReading? worst;
+  for (final reading in readings) {
+    if (reading.condition == WaterCondition.ideal) continue;
+    if (worst == null || reading.condition == WaterCondition.danger) {
+      worst = reading;
+      if (reading.condition == WaterCondition.danger) break;
+    }
   }
   return worst;
 }

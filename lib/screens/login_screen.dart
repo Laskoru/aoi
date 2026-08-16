@@ -158,27 +158,7 @@ class _LoginScreenState extends State<LoginScreen> {
         color: Colors.white.withValues(alpha: 0.12),
         border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 2),
       ),
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Icon(
-            Icons.water_drop_rounded,
-            size: 46,
-            color: Colors.white.withValues(alpha: 0.9),
-          ),
-          Positioned(
-            top: 22,
-            child: Container(
-              width: 16,
-              height: 16,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: AppPalette.hiBright,
-              ),
-            ),
-          ),
-        ],
-      ),
+      child: const Center(child: KoiEmblem(size: 50, color: Colors.white)),
     );
   }
 

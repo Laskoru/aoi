@@ -6,27 +6,17 @@ import '../utils/water_logic.dart';
 
 /// Carte d'un paramètre de l'eau : la valeur en gros, l'état en couleur.
 ///
-/// La couleur et le libellé de l'état viennent de [WaterConditionStyle] : la
-/// carte ne décide de rien, elle affiche.
+/// La carte ne décide de rien : le seuil vient de [WaterLogic], la couleur de
+/// [WaterConditionStyle]. Elle affiche.
 class MetricCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final String unit;
-  final IconData icon;
-  final WaterCondition condition;
+  final WaterReading reading;
 
-  const MetricCard({
-    super.key,
-    required this.title,
-    required this.value,
-    required this.unit,
-    required this.icon,
-    required this.condition,
-  });
+  const MetricCard({super.key, required this.reading});
 
   @override
   Widget build(BuildContext context) {
     final colors = context.colors;
+    final condition = reading.condition;
     final statusColor = condition.color(context);
 
     return Container(
@@ -49,7 +39,7 @@ class MetricCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Icon(icon, color: statusColor, size: 22),
+              Icon(reading.parameter.icon, color: statusColor, size: 22),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
@@ -69,25 +59,32 @@ class MetricCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 14),
-          Text(title, style: context.texts.labelMedium),
+          Text(
+            reading.parameter.label,
+            style: context.texts.labelMedium,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
           const SizedBox(height: AppSpacing.xs),
           RichText(
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             text: TextSpan(
               children: [
                 TextSpan(
-                  text: value,
+                  text: reading.formattedValue,
                   style: TextStyle(
-                    fontSize: 26,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                     letterSpacing: -1,
                     color: colors.onSurface,
                   ),
                 ),
-                if (unit.isNotEmpty)
+                if (reading.parameter.unit.isNotEmpty)
                   TextSpan(
-                    text: " $unit",
+                    text: " ${reading.parameter.unit}",
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 13,
                       fontWeight: FontWeight.w500,
                       color: colors.onSurfaceVariant,
                     ),

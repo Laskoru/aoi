@@ -211,19 +211,33 @@ class DashboardScreen extends StatelessWidget {
     return StreamBuilder<QuerySnapshot>(
       stream: _latestMeasurementStream(uid),
       builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Padding(
+            padding: const EdgeInsets.only(bottom: AppSpacing.md),
+            child: ErrorState(error: snapshot.error),
+          );
+        }
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return const SizedBox.shrink();
         }
 
-        final measurement = WaterMeasurement.fromFirestore(
+        final readings = WaterMeasurement.fromFirestore(
           snapshot.data!.docs.first,
-        );
-        final condition = worstCondition([
-          WaterLogic.checkPhLevel(measurement.ph),
-          WaterLogic.checkTemperature(measurement.temperature),
-        ]);
+        ).readings;
 
+        final condition = worstCondition(readings.map((r) => r.condition));
+        final concerning = mostConcerningReading(readings);
         final color = condition.color(context);
+
+        // Nommer le paramètre fautif vaut mieux qu'un « un paramètre est hors
+        // plage » : on sait quoi corriger sans ouvrir un autre écran.
+        final headline = switch (condition) {
+          WaterCondition.ideal => "Bassin en bonne santé",
+          _ =>
+            "${concerning!.parameter.label} : ${concerning.formattedValue} ${concerning.parameter.unit}"
+                .trim(),
+        };
+        final detail = concerning?.parameter.explanation ?? condition.advice;
 
         return Container(
           padding: const EdgeInsets.all(AppSpacing.md),
@@ -233,6 +247,7 @@ class DashboardScreen extends StatelessWidget {
             border: Border.all(color: color.withValues(alpha: 0.28)),
           ),
           child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Icon(condition.icon, color: color, size: 22),
               const SizedBox(width: 12),
@@ -241,13 +256,11 @@ class DashboardScreen extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      condition == WaterCondition.ideal
-                          ? "Bassin en bonne santé"
-                          : "Le bassin demande votre attention",
+                      headline,
                       style: context.texts.labelLarge?.copyWith(color: color),
                     ),
                     const SizedBox(height: 2),
-                    Text(condition.advice, style: context.texts.bodyMedium),
+                    Text(detail, style: context.texts.bodyMedium),
                   ],
                 ),
               ),
@@ -271,6 +284,8 @@ class DashboardScreen extends StatelessWidget {
     return StreamBuilder<QuerySnapshot>(
       stream: _latestMeasurementStream(uid),
       builder: (context, snapshot) {
+        if (snapshot.hasError) return ErrorState(error: snapshot.error);
+
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return EmptyState(
             icon: Icons.science_rounded,
@@ -285,32 +300,24 @@ class DashboardScreen extends StatelessWidget {
           );
         }
 
-        final measurement = WaterMeasurement.fromFirestore(
+        // Deux cartes par ligne, et seulement les paramètres réellement
+        // relevés : une mesure rapide ne contient que pH et température.
+        final readings = WaterMeasurement.fromFirestore(
           snapshot.data!.docs.first,
-        );
+        ).readings;
 
-        return Row(
-          children: [
-            Expanded(
-              child: MetricCard(
-                title: "pH",
-                value: measurement.ph.toStringAsFixed(1),
-                unit: "",
-                icon: Icons.science_rounded,
-                condition: WaterLogic.checkPhLevel(measurement.ph),
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: MetricCard(
-                title: "Température",
-                value: measurement.temperature.toStringAsFixed(1),
-                unit: "°C",
-                icon: Icons.device_thermostat_rounded,
-                condition: WaterLogic.checkTemperature(measurement.temperature),
-              ),
-            ),
-          ],
+        return GridView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: 2,
+            crossAxisSpacing: AppSpacing.md,
+            mainAxisSpacing: AppSpacing.md,
+            mainAxisExtent: 132,
+          ),
+          itemCount: readings.length,
+          itemBuilder: (context, index) =>
+              MetricCard(reading: readings[index]),
         );
       },
     );
@@ -326,6 +333,11 @@ class DashboardScreen extends StatelessWidget {
           .orderBy('createdAt', descending: true)
           .snapshots(),
       builder: (context, snapshot) {
+        // L'erreur passe avant l'état vide : sans cela, un refus de permission
+        // s'afficherait « votre collection est vide », ce qui laisserait
+        // croire à une perte de données.
+        if (snapshot.hasError) return ErrorState(error: snapshot.error);
+
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
             child: Padding(
@@ -528,9 +540,8 @@ class _KoiCard extends StatelessWidget {
         ),
       ),
       child: Center(
-        child: Icon(
-          Icons.set_meal_rounded,
-          size: 44,
+        child: KoiEmblem(
+          size: 46,
           color: colors.primary.withValues(alpha: 0.35),
         ),
       ),

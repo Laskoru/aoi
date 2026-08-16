@@ -214,6 +214,70 @@ class EmptyState extends StatelessWidget {
   }
 }
 
+/// Échec de chargement.
+///
+/// Distinct de [EmptyState] à dessein : afficher « votre collection est vide »
+/// alors qu'une requête a échoué laisserait croire à une perte de données.
+class ErrorState extends StatelessWidget {
+  final Object? error;
+  final String? title;
+
+  const ErrorState({super.key, this.error, this.title});
+
+  /// Un refus de permission n'appelle pas la même réaction qu'une coupure
+  /// réseau : autant le dire franchement plutôt que d'afficher le code brut.
+  String get _message {
+    final text = error?.toString().toLowerCase() ?? '';
+    if (text.contains('permission-denied') || text.contains('insufficient')) {
+      return "Accès refusé par les règles de sécurité. Vérifiez que vous êtes "
+          "bien connecté au bon compte.";
+    }
+    if (text.contains('unavailable') || text.contains('network')) {
+      return "Connexion au serveur impossible. Vérifiez votre accès à Internet.";
+    }
+    if (text.contains('failed-precondition') || text.contains('index')) {
+      return "Un index Firestore manque pour cette requête. Déployez les index "
+          "du projet.";
+    }
+    return "Une erreur est survenue pendant le chargement.";
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final danger = context.pond.danger;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: context.pond.dangerSurface,
+        borderRadius: BorderRadius.circular(AppRadius.field),
+        border: Border.all(color: danger.withValues(alpha: 0.28)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.cloud_off_rounded, color: danger, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title ?? "Chargement impossible",
+                  style: context.texts.labelLarge?.copyWith(color: danger),
+                ),
+                const SizedBox(height: 2),
+                Text(_message, style: context.texts.bodyMedium),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Petite colonne icône / libellé / valeur, pour les caractéristiques d'une
 /// fiche affichées côte à côte.
 class InfoTile extends StatelessWidget {
@@ -281,6 +345,47 @@ class LabelledRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Emblème de l'application : une goutte d'eau marquée d'une tache `hi`,
+/// comme la plaque rouge d'un kohaku.
+///
+/// Il sert à la fois de logo sur l'écran de connexion et de vignette pour les
+/// koï sans photo. Material n'offre aucune icône de poisson convaincante — la
+/// seule approchante représente un poisson servi dans une assiette, ce qui
+/// tombe assez mal dans une application d'élevage.
+class KoiEmblem extends StatelessWidget {
+  final double size;
+  final Color? color;
+
+  const KoiEmblem({super.key, this.size = 48, this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    final base = color ?? context.colors.primary;
+
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Icon(Icons.water_drop_rounded, size: size, color: base),
+          Positioned(
+            top: size * 0.34,
+            child: Container(
+              width: size * 0.22,
+              height: size * 0.22,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: context.isDark ? AppPalette.hiBright : AppPalette.hi,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

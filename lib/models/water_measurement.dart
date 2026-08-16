@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../utils/water_logic.dart';
 
 /// Un relevé des paramètres de l'eau du bassin.
 ///
@@ -29,6 +30,20 @@ class WaterMeasurement {
     this.nitrate,
     this.ammonia,
   });
+
+  /// Les valeurs effectivement relevées, dans l'ordre d'affichage.
+  ///
+  /// pH et température figurent toujours ; les autres n'apparaissent que si
+  /// elles ont été saisies, une mesure rapide n'en contenant aucune.
+  List<WaterReading> get readings => [
+    WaterReading(WaterParameter.ph, ph),
+    WaterReading(WaterParameter.temperature, temperature),
+    if (ammonia != null) WaterReading(WaterParameter.ammonia, ammonia!),
+    if (nitrite != null) WaterReading(WaterParameter.nitrite, nitrite!),
+    if (nitrate != null) WaterReading(WaterParameter.nitrate, nitrate!),
+    if (kh != null) WaterReading(WaterParameter.kh, kh!),
+    if (gh != null) WaterReading(WaterParameter.gh, gh!),
+  ];
 
   Map<String, dynamic> toMap() => {
     'userId': userId,

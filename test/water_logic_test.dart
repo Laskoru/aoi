@@ -45,4 +45,90 @@ void main() {
       expect(WaterLogic.checkTemperature(35), WaterCondition.danger);
     });
   });
+
+  group('Toxiques du cycle de l\'azote', () {
+    test('la seule ammoniaque confortable est proche de zéro', () {
+      expect(WaterLogic.checkAmmonia(0), WaterCondition.ideal);
+      expect(WaterLogic.checkAmmonia(0.02), WaterCondition.ideal);
+      expect(WaterLogic.checkAmmonia(0.1), WaterCondition.warning);
+      expect(WaterLogic.checkAmmonia(0.25), WaterCondition.warning);
+      expect(WaterLogic.checkAmmonia(0.26), WaterCondition.danger);
+      expect(WaterLogic.checkAmmonia(2), WaterCondition.danger);
+    });
+
+    test('les nitrites deviennent dangereux très vite', () {
+      expect(WaterLogic.checkNitrite(0), WaterCondition.ideal);
+      expect(WaterLogic.checkNitrite(0.1), WaterCondition.ideal);
+      expect(WaterLogic.checkNitrite(0.2), WaterCondition.warning);
+      expect(WaterLogic.checkNitrite(0.25), WaterCondition.warning);
+      expect(WaterLogic.checkNitrite(0.3), WaterCondition.danger);
+      expect(WaterLogic.checkNitrite(5), WaterCondition.danger);
+    });
+
+    test('les nitrates sont tolérés bien plus haut', () {
+      expect(WaterLogic.checkNitrate(0), WaterCondition.ideal);
+      expect(WaterLogic.checkNitrate(40), WaterCondition.ideal);
+      expect(WaterLogic.checkNitrate(60), WaterCondition.warning);
+      expect(WaterLogic.checkNitrate(80), WaterCondition.warning);
+      expect(WaterLogic.checkNitrate(120), WaterCondition.danger);
+    });
+
+    test('un nitrate élevé est moins grave qu\'un nitrite élevé', () {
+      // Garde-fou contre une inversion des seuils : à valeur égale, le
+      // nitrite doit toujours alerter au moins autant que le nitrate.
+      expect(WaterLogic.checkNitrate(1), WaterCondition.ideal);
+      expect(WaterLogic.checkNitrite(1), WaterCondition.danger);
+    });
+  });
+
+  group('Duretés', () {
+    test('un KH trop bas est dangereux : le pH peut s\'effondrer', () {
+      expect(WaterLogic.checkKh(2), WaterCondition.danger);
+      expect(WaterLogic.checkKh(3), WaterCondition.warning);
+      expect(WaterLogic.checkKh(5), WaterCondition.ideal);
+      expect(WaterLogic.checkKh(15), WaterCondition.ideal);
+      expect(WaterLogic.checkKh(18), WaterCondition.warning);
+      expect(WaterLogic.checkKh(25), WaterCondition.danger);
+    });
+
+    test('le GH suit une plage large', () {
+      expect(WaterLogic.checkGh(3), WaterCondition.danger);
+      expect(WaterLogic.checkGh(6), WaterCondition.warning);
+      expect(WaterLogic.checkGh(12), WaterCondition.ideal);
+      expect(WaterLogic.checkGh(25), WaterCondition.warning);
+      expect(WaterLogic.checkGh(35), WaterCondition.danger);
+    });
+  });
+
+  group('Lecture d\'un relevé', () {
+    test('chaque paramètre route vers son propre seuil', () {
+      expect(
+        const WaterReading(WaterParameter.nitrite, 1).condition,
+        WaterCondition.danger,
+      );
+      expect(
+        const WaterReading(WaterParameter.nitrate, 1).condition,
+        WaterCondition.ideal,
+      );
+      expect(
+        const WaterReading(WaterParameter.ph, 7.5).condition,
+        WaterCondition.ideal,
+      );
+    });
+
+    test('les toxiques se lisent au centième, les nitrates à l\'unité', () {
+      expect(
+        const WaterReading(WaterParameter.nitrite, 0.25).formattedValue,
+        '0.25',
+      );
+      expect(
+        const WaterReading(WaterParameter.nitrate, 42.7).formattedValue,
+        '43',
+      );
+      expect(
+        const WaterReading(WaterParameter.temperature, 18).formattedValue,
+        '18.0',
+      );
+    });
+  });
 }

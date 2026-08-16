@@ -159,11 +159,7 @@ class KoiDetailsScreen extends StatelessWidget {
                         ? NetworkImage(koi.imageUrl!)
                         : null,
                     child: koi.imageUrl == null
-                        ? const Icon(
-                            Icons.set_meal_rounded,
-                            size: 42,
-                            color: Colors.white,
-                          )
+                        ? const KoiEmblem(size: 46, color: Colors.white)
                         : null,
                   ),
                 ),
