@@ -24,11 +24,21 @@ service firebase.storage {
 
     // --- Photos de koï, rangées par propriétaire ---
 
+    // Galerie d'un koï : kois_photos/{userId}/{koiId}/{photoId}.jpg
+    match /kois_photos/{userId}/{koiId}/{fileName} {
+      allow read:   if isSignedIn() && request.auth.uid == userId;
+      allow write:  if isSignedIn() && request.auth.uid == userId
+                    && isImage() && underSizeLimit();
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Photo unique, avant l'arrivée de la galerie :
+    // kois_photos/{userId}/{koiId}.jpg
     match /kois_photos/{userId}/{fileName} {
-      allow read:         if isSignedIn() && request.auth.uid == userId;
-      allow write:        if isSignedIn() && request.auth.uid == userId
-                          && isImage() && underSizeLimit();
-      allow delete:       if isSignedIn() && request.auth.uid == userId;
+      allow read:   if isSignedIn() && request.auth.uid == userId;
+      allow write:  if isSignedIn() && request.auth.uid == userId
+                    && isImage() && underSizeLimit();
+      allow delete: if isSignedIn() && request.auth.uid == userId;
     }
 
     // --- Ancien emplacement, avant le rangement par utilisateur ---

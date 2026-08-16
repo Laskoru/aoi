@@ -84,6 +84,21 @@ service cloud.firestore {
                       && request.resource.data.size <= 200;
         allow update, delete: if ownsParentKoi();
       }
+
+      // Galerie de photos, même principe : la propriété se déduit du koï.
+      match /photos/{photoId} {
+        function ownsParentKoi() {
+          return isSignedIn()
+              && exists(/databases/$(database)/documents/kois/$(koiId))
+              && get(/databases/$(database)/documents/kois/$(koiId)).data.userId == request.auth.uid;
+        }
+
+        allow read:   if ownsParentKoi();
+        allow create: if ownsParentKoi()
+                      && request.resource.data.url is string
+                      && request.resource.data.storagePath is string;
+        allow update, delete: if ownsParentKoi();
+      }
     }
 
     // --- Mesures de l'eau du bassin ---

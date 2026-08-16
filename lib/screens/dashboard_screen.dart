@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'koi_form_screen.dart';
 import 'add_measurement_screen.dart';
 import 'koi_details_screen.dart';
+import 'measurements_screen.dart';
 import '../models/koi.dart';
 import '../models/water_measurement.dart';
 import '../services/auth_service.dart';
@@ -67,9 +68,19 @@ class DashboardScreen extends StatelessWidget {
                   _buildKoiGrid(user.uid),
 
                   const SizedBox(height: AppSpacing.xl),
-                  const SectionHeader(
+                  SectionHeader(
                     title: "Paramètres du bassin",
                     icon: Icons.water_drop_rounded,
+                    trailing: TextButton.icon(
+                      icon: const Icon(Icons.history_rounded, size: 18),
+                      label: const Text("Historique"),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const MeasurementsScreen(),
+                        ),
+                      ),
+                    ),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _buildWaterMonitor(user.uid),

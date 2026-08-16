@@ -221,6 +221,37 @@ class Koi {
   }
 }
 
+/// Une photo de la galerie d'un koï, stockée dans sa sous-collection `photos`.
+///
+/// Le motif d'un koï évolue d'une année sur l'autre : garder la suite des
+/// clichés vaut mieux qu'écraser la seule photo à chaque envoi.
+class KoiPhoto {
+  final String id;
+  final String url;
+
+  /// Chemin dans Cloud Storage, conservé pour pouvoir supprimer le fichier :
+  /// l'URL de téléchargement seule ne permet pas de le retrouver.
+  final String storagePath;
+  final DateTime? takenAt;
+
+  const KoiPhoto({
+    required this.id,
+    required this.url,
+    required this.storagePath,
+    this.takenAt,
+  });
+
+  factory KoiPhoto.fromFirestore(DocumentSnapshot doc) {
+    final data = (doc.data() as Map<String, dynamic>?) ?? const {};
+    return KoiPhoto(
+      id: doc.id,
+      url: data['url'] as String? ?? '',
+      storagePath: data['storagePath'] as String? ?? '',
+      takenAt: (data['takenAt'] as Timestamp?)?.toDate(),
+    );
+  }
+}
+
 /// Un relevé de taille, stocké dans la sous-collection `growth` du koï.
 class GrowthEntry {
   final String id;

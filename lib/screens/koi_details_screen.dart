@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show Uint8List;
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../models/koi.dart';
+import '../services/koi_service.dart';
 import 'koi_form_screen.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_theme.dart';
@@ -48,6 +47,11 @@ class KoiDetailsScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
 
+          // Dart ne conserve pas la promotion de type à l'intérieur d'une
+          // closure pour une variable affectée après sa déclaration : les
+          // fonctions différées ci-dessous ont besoin d'un Koi non nullable.
+          final Koi loaded = koi;
+
           return CustomScrollView(
             physics: const BouncingScrollPhysics(),
             slivers: [
@@ -81,6 +85,17 @@ class KoiDetailsScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const SectionHeader(
+                        title: "Galerie",
+                        icon: Icons.photo_library_rounded,
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      _PhotoGallery(
+                        koi: loaded,
+                        onAdd: () => _addPhoto(context, loaded),
+                      ),
+
+                      const SizedBox(height: AppSpacing.lg),
                       const SectionHeader(
                         title: "Identité",
                         icon: Icons.fingerprint_rounded,
@@ -156,7 +171,7 @@ class KoiDetailsScreen extends StatelessWidget {
       child: Column(
         children: [
           GestureDetector(
-            onTap: () => _pickAndUploadImage(context, koi),
+            onTap: () => _addPhoto(context, koi),
             child: Stack(
               children: [
                 Container(
@@ -733,13 +748,10 @@ class KoiDetailsScreen extends StatelessWidget {
 
   // --- Photo ---
 
-  Future<void> _pickAndUploadImage(BuildContext context, Koi koi) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
-
+  Future<void> _addPhoto(BuildContext context, Koi koi) async {
     final XFile? pickedFile = await ImagePicker().pickImage(
       source: ImageSource.gallery,
-      imageQuality: 60,
+      imageQuality: 70,
     );
     if (pickedFile == null || !context.mounted) return;
 
@@ -763,34 +775,275 @@ class KoiDetailsScreen extends StatelessWidget {
 
     try {
       final Uint8List imageBytes = await pickedFile.readAsBytes();
-
-      // Rangé sous l'identifiant du propriétaire : c'est ce que les règles
-      // Storage vérifient pour interdire l'accès aux photos des autres.
-      final storageRef = FirebaseStorage.instance
-          .ref()
-          .child('kois_photos')
-          .child(user.uid)
-          .child('${koi.id}.jpg');
-
-      await storageRef.putData(
-        imageBytes,
-        SettableMetadata(contentType: 'image/jpeg'),
-      );
-      final String downloadUrl = await storageRef.getDownloadURL();
-
-      await FirebaseFirestore.instance.collection('kois').doc(koi.id).update({
-        'imageUrl': downloadUrl,
-      });
+      await KoiService.addPhoto(koi, imageBytes);
 
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
-        const SnackBar(content: Text("Photo mise à jour ! 🎉")),
+        const SnackBar(content: Text("Photo ajoutée à la galerie ! 🎉")),
       );
     } catch (e) {
       debugPrint("[AOI] Erreur Firebase Storage : $e");
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
         SnackBar(content: Text("Erreur lors du transfert : $e")),
+      );
+    }
+  }
+}
+
+/// Bande de photos d'un koï.
+///
+/// Le motif d'un koï change avec les années : la galerie garde la suite des
+/// clichés, là où l'ancienne version écrasait l'unique photo à chaque envoi.
+class _PhotoGallery extends StatelessWidget {
+  final Koi koi;
+  final Future<void> Function() onAdd;
+
+  const _PhotoGallery({required this.koi, required this.onAdd});
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<List<KoiPhoto>>(
+      stream: KoiService.photosOf(koi.id),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) return ErrorState(error: snapshot.error);
+
+        final photos = snapshot.data ?? const <KoiPhoto>[];
+
+        return SizedBox(
+          height: 104,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            itemCount: photos.length + 1,
+            separatorBuilder: (context, index) =>
+                const SizedBox(width: AppSpacing.sm),
+            itemBuilder: (context, index) {
+              if (index == 0) return _AddPhotoTile(onTap: onAdd);
+              final photo = photos[index - 1];
+              return _PhotoTile(
+                photo: photo,
+                isMain: photo.url == koi.imageUrl,
+                onTap: () => _openViewer(context, photo),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  void _openViewer(BuildContext context, KoiPhoto photo) {
+    showDialog<void>(
+      context: context,
+      barrierColor: Colors.black.withValues(alpha: 0.9),
+      builder: (dialogContext) => _PhotoViewer(koi: koi, photo: photo),
+    );
+  }
+}
+
+class _AddPhotoTile extends StatelessWidget {
+  final Future<void> Function() onTap;
+
+  const _AddPhotoTile({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.field),
+      child: Container(
+        width: 88,
+        decoration: BoxDecoration(
+          color: colors.surface,
+          borderRadius: BorderRadius.circular(AppRadius.field),
+          border: Border.all(color: colors.outline),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.add_a_photo_rounded, color: colors.primary, size: 22),
+            const SizedBox(height: 6),
+            Text("Ajouter", style: context.texts.labelMedium),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PhotoTile extends StatelessWidget {
+  final KoiPhoto photo;
+  final bool isMain;
+  final VoidCallback onTap;
+
+  const _PhotoTile({
+    required this.photo,
+    required this.isMain,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.field),
+      child: Container(
+        width: 88,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(AppRadius.field),
+          border: Border.all(
+            color: isMain ? AppPalette.hi : context.colors.outlineVariant,
+            width: isMain ? 2 : 1,
+          ),
+        ),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Image.network(
+              photo.url,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => ColoredBox(
+                color: context.colors.surfaceContainerHigh,
+                child: Icon(
+                  Icons.broken_image_rounded,
+                  color: context.colors.onSurfaceVariant,
+                ),
+              ),
+            ),
+            if (isMain)
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: ColoredBox(
+                  color: AppPalette.hi,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 2),
+                    child: Text(
+                      "PRINCIPALE",
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 8,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Vue plein écran d'une photo, avec les deux actions qui s'y rapportent.
+class _PhotoViewer extends StatelessWidget {
+  final Koi koi;
+  final KoiPhoto photo;
+
+  const _PhotoViewer({required this.koi, required this.photo});
+
+  @override
+  Widget build(BuildContext context) {
+    final isMain = photo.url == koi.imageUrl;
+
+    return Dialog.fullscreen(
+      backgroundColor: Colors.transparent,
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: InteractiveViewer(
+              maxScale: 4,
+              child: Center(child: Image.network(photo.url)),
+            ),
+          ),
+          SafeArea(
+            child: Align(
+              alignment: Alignment.topRight,
+              child: IconButton(
+                icon: const Icon(Icons.close_rounded, color: Colors.white),
+                onPressed: () => Navigator.pop(context),
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (!isMain)
+                      TextButton.icon(
+                        icon: const Icon(Icons.star_rounded),
+                        label: const Text("Définir comme principale"),
+                        style: TextButton.styleFrom(
+                          foregroundColor: Colors.white,
+                        ),
+                        onPressed: () async {
+                          final navigator = Navigator.of(context);
+                          await KoiService.setMainPhoto(koi, photo);
+                          navigator.pop();
+                        },
+                      ),
+                    TextButton.icon(
+                      icon: const Icon(Icons.delete_outline_rounded),
+                      label: const Text("Supprimer"),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppPalette.hiBright,
+                      ),
+                      onPressed: () => _confirmDelete(context),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _confirmDelete(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Supprimer cette photo ?'),
+        content: const Text("Le cliché sera définitivement effacé."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: TextButton.styleFrom(
+              foregroundColor: dialogContext.pond.danger,
+            ),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !context.mounted) return;
+
+    final navigator = Navigator.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await KoiService.deletePhoto(koi, photo);
+      navigator.pop();
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text("Suppression impossible : $e")),
       );
     }
   }

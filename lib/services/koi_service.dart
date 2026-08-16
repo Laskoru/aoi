@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:flutter/foundation.dart' show Uint8List, debugPrint;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import '../models/koi.dart';
@@ -31,7 +31,86 @@ class KoiService {
     });
   }
 
-  /// Supprime une fiche, son historique de croissance et sa photo.
+  // --- Galerie photo ---
+
+  /// Flux des photos d'un koï, de la plus récente à la plus ancienne.
+  static Stream<List<KoiPhoto>> photosOf(String koiId) {
+    return _collection
+        .doc(koiId)
+        .collection('photos')
+        .orderBy('takenAt', descending: true)
+        .snapshots()
+        .map((snap) => snap.docs.map(KoiPhoto.fromFirestore).toList());
+  }
+
+  /// Ajoute une photo à la galerie.
+  ///
+  /// La première photo devient d'office la principale : sans cela, un koï
+  /// resterait sans vignette alors qu'une photo existe.
+  static Future<void> addPhoto(Koi koi, Uint8List bytes) async {
+    final photoRef = _collection.doc(koi.id).collection('photos').doc();
+    final storagePath =
+        'kois_photos/${koi.userId}/${koi.id}/${photoRef.id}.jpg';
+
+    final storageRef = FirebaseStorage.instance.ref(storagePath);
+    await storageRef.putData(
+      bytes,
+      SettableMetadata(contentType: 'image/jpeg'),
+    );
+    final url = await storageRef.getDownloadURL();
+
+    await photoRef.set({
+      'url': url,
+      'storagePath': storagePath,
+      'takenAt': FieldValue.serverTimestamp(),
+    });
+
+    if (koi.imageUrl == null) {
+      await _collection.doc(koi.id).update({'imageUrl': url});
+    }
+  }
+
+  /// Désigne la photo qui représente le koï dans la grille et l'en-tête.
+  static Future<void> setMainPhoto(Koi koi, KoiPhoto photo) {
+    return _collection.doc(koi.id).update({'imageUrl': photo.url});
+  }
+
+  /// Retire une photo de la galerie.
+  ///
+  /// Si c'était la photo principale, une autre prend sa place, à défaut le koï
+  /// revient à sa vignette par défaut.
+  static Future<void> deletePhoto(Koi koi, KoiPhoto photo) async {
+    await _collection.doc(koi.id).collection('photos').doc(photo.id).delete();
+    await _deleteFromStorage(photo.storagePath);
+
+    if (koi.imageUrl != photo.url) return;
+
+    final remaining = await _collection
+        .doc(koi.id)
+        .collection('photos')
+        .orderBy('takenAt', descending: true)
+        .limit(1)
+        .get();
+
+    await _collection.doc(koi.id).update({
+      'imageUrl': remaining.docs.isEmpty
+          ? null
+          : remaining.docs.first.data()['url'],
+    });
+  }
+
+  /// La suppression d'un fichier est secondaire : son absence ne doit jamais
+  /// faire échouer l'opération métier déjà effectuée.
+  static Future<void> _deleteFromStorage(String path) async {
+    if (path.isEmpty) return;
+    try {
+      await FirebaseStorage.instance.ref(path).delete();
+    } catch (e) {
+      debugPrint('[AOI] Fichier non supprimé ($path) : $e');
+    }
+  }
+
+  /// Supprime une fiche, son historique de croissance, sa galerie et sa photo.
   ///
   /// Firestore ne supprime pas les sous-collections avec le document parent :
   /// les relevés de croissance resteraient orphelins et invisibles, il faut
@@ -44,25 +123,23 @@ class KoiService {
   static Future<void> delete(Koi koi) async {
     final doc = _collection.doc(koi.id);
     final growth = await doc.collection('growth').get();
+    final photos = await doc.collection('photos').get();
 
     final batch = FirebaseFirestore.instance.batch();
     for (final entry in growth.docs) {
       batch.delete(entry.reference);
     }
+    for (final photo in photos.docs) {
+      batch.delete(photo.reference);
+    }
     batch.delete(doc);
     await batch.commit();
 
-    // La photo est secondaire : son absence ne doit pas faire échouer la
-    // suppression de la fiche, déjà effectuée.
-    try {
-      await FirebaseStorage.instance
-          .ref()
-          .child('kois_photos')
-          .child(koi.userId)
-          .child('${koi.id}.jpg')
-          .delete();
-    } catch (e) {
-      debugPrint('[AOI] Photo non supprimée (probablement absente) : $e');
+    for (final photo in photos.docs) {
+      await _deleteFromStorage(photo.data()['storagePath'] as String? ?? '');
     }
+
+    // Photo unique des versions antérieures à la galerie.
+    await _deleteFromStorage('kois_photos/${koi.userId}/${koi.id}.jpg');
   }
 }
