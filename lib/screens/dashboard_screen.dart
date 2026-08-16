@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'add_koi_screen.dart';
+import 'koi_form_screen.dart';
 import 'add_measurement_screen.dart';
 import 'koi_details_screen.dart';
 import '../models/koi.dart';
@@ -59,7 +59,7 @@ class DashboardScreen extends StatelessWidget {
                       tooltip: "Ajouter un koï",
                       onPressed: () => Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (_) => const AddKoiScreen()),
+                        MaterialPageRoute(builder: (_) => const KoiFormScreen()),
                       ),
                     ),
                   ),
@@ -355,7 +355,7 @@ class DashboardScreen extends StatelessWidget {
             actionLabel: "Ajouter un koï",
             onAction: () => Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => const AddKoiScreen()),
+              MaterialPageRoute(builder: (_) => const KoiFormScreen()),
             ),
           );
         }

@@ -3,22 +3,31 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../models/koi.dart';
+import '../services/koi_service.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_widgets.dart';
 
-class AddKoiScreen extends StatefulWidget {
-  const AddKoiScreen({super.key});
+/// Formulaire d'un koï, en création comme en modification.
+///
+/// Les deux usages partagent les mêmes champs et les mêmes contrôles : les
+/// séparer en deux écrans aurait dupliqué cinq cents lignes pour une poignée
+/// de différences.
+class KoiFormScreen extends StatefulWidget {
+  /// Fiche à modifier. `null` pour une création.
+  final Koi? existing;
+
+  const KoiFormScreen({super.key, this.existing});
 
   @override
-  State<AddKoiScreen> createState() => _AddKoiScreenState();
+  State<KoiFormScreen> createState() => _KoiFormScreenState();
 }
 
 /// Origine d'un parent : non renseigné, un autre koï du bassin, ou une saisie
 /// libre pour un géniteur qui n'est pas dans la collection.
 enum _ParentMode { none, linked, manual }
 
-class _AddKoiScreenState extends State<AddKoiScreen> {
+class _KoiFormScreenState extends State<KoiFormScreen> {
   final _formKey = GlobalKey<FormState>();
 
   final _nameController = TextEditingController();
@@ -32,6 +41,7 @@ class _AddKoiScreenState extends State<AddKoiScreen> {
 
   DateTime? _birthDate;
   KoiSex _sex = KoiSex.unknown;
+  KoiStatus _status = KoiStatus.alive;
 
   _ParentMode _fatherMode = _ParentMode.none;
   _ParentMode _motherMode = _ParentMode.none;
@@ -39,6 +49,42 @@ class _AddKoiScreenState extends State<AddKoiScreen> {
   String? _selectedMotherId;
 
   bool _isLoading = false;
+
+  bool get _isEditing => widget.existing != null;
+
+  @override
+  void initState() {
+    super.initState();
+
+    final koi = widget.existing;
+    if (koi == null) return;
+
+    _nameController.text = koi.name;
+    _varietyController.text = koi.variety;
+    _sizeController.text = koi.size > 0 ? koi.size.toString() : '';
+    _breederController.text = koi.breeder ?? '';
+    _originController.text = koi.origin ?? '';
+    _notesController.text = koi.notes ?? '';
+    _fatherManualController.text = koi.fatherNameManual ?? '';
+    _motherManualController.text = koi.motherNameManual ?? '';
+
+    _birthDate = koi.birthDate;
+    _sex = koi.sex;
+    _status = koi.status;
+
+    _fatherMode = _modeFor(koi.fatherId, koi.fatherNameManual);
+    _selectedFatherId = koi.fatherId;
+    _motherMode = _modeFor(koi.motherId, koi.motherNameManual);
+    _selectedMotherId = koi.motherId;
+  }
+
+  _ParentMode _modeFor(String? id, String? manualName) {
+    if (id != null) return _ParentMode.linked;
+    if (manualName != null && manualName.trim().isNotEmpty) {
+      return _ParentMode.manual;
+    }
+    return _ParentMode.none;
+  }
 
   @override
   void dispose() {
@@ -77,7 +123,7 @@ class _AddKoiScreenState extends State<AddKoiScreen> {
     return value.isEmpty ? null : value;
   }
 
-  Future<void> _saveKoi() async {
+  Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
 
     final User? user = FirebaseAuth.instance.currentUser;
@@ -90,16 +136,22 @@ class _AddKoiScreenState extends State<AddKoiScreen> {
 
     try {
       final koi = Koi(
-        id: '',
+        id: widget.existing?.id ?? '',
         userId: user.uid,
         name: _nameController.text.trim(),
         variety: _varietyController.text.trim(),
-        size: double.tryParse(_sizeController.text.trim().replaceAll(',', '.')) ?? 0.0,
+        size:
+            double.tryParse(_sizeController.text.trim().replaceAll(',', '.')) ??
+            0.0,
         birthDate: _birthDate,
         sex: _sex,
+        status: _status,
         breeder: _trimmedOrNull(_breederController),
         origin: _trimmedOrNull(_originController),
         notes: _trimmedOrNull(_notesController),
+        // La photo n'est pas gérée ici : la reprendre telle quelle évite que
+        // l'enregistrement du formulaire ne l'efface.
+        imageUrl: widget.existing?.imageUrl,
         fatherId: _fatherMode == _ParentMode.linked ? _selectedFatherId : null,
         fatherNameManual: _fatherMode == _ParentMode.manual
             ? _trimmedOrNull(_fatherManualController)
@@ -110,19 +162,68 @@ class _AddKoiScreenState extends State<AddKoiScreen> {
             : null,
       );
 
-      await FirebaseFirestore.instance.collection('kois').add({
-        ...koi.toMap(),
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+      if (_isEditing) {
+        await KoiService.update(koi);
+      } else {
+        await KoiService.create(koi);
+      }
 
       if (mounted) {
-        _showSnack('Carpe koï ajoutée ! 🎉');
+        _showSnack(_isEditing ? 'Fiche mise à jour.' : 'Carpe koï ajoutée ! 🎉');
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) _showSnack('Erreur lors de la sauvegarde : $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _confirmDelete() async {
+    final koi = widget.existing;
+    if (koi == null) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Supprimer ${koi.name} ?'),
+        content: const Text(
+          "La fiche, son historique de croissance et sa photo seront effacés "
+          "définitivement.\n\nLes koï qui la désignent comme parent garderont "
+          "la trace d'une filiation, marquée comme introuvable.",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(foregroundColor: context.pond.danger),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true || !mounted) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      await KoiService.delete(koi);
+      if (mounted) {
+        _showSnack('${koi.name} a été supprimé.');
+        // Deux retours : on quitte le formulaire, puis la fiche détail qui
+        // n'a plus de document à afficher.
+        Navigator.pop(context);
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _showSnack('Suppression impossible : $e');
+      }
     }
   }
 
@@ -136,13 +237,23 @@ class _AddKoiScreenState extends State<AddKoiScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Ajouter un koï',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          _isEditing ? 'Modifier la fiche' : 'Ajouter un koï',
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: context.colors.primary,
-        foregroundColor: context.colors.onPrimary,
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: context.colors.onSurface,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
+        actions: [
+          if (_isEditing)
+            IconButton(
+              icon: const Icon(Icons.delete_outline_rounded),
+              color: context.pond.danger,
+              tooltip: 'Supprimer ce koï',
+              onPressed: _isLoading ? null : _confirmDelete,
+            ),
+        ],
       ),
       body: user == null
           ? const Center(child: Text("Session expirée"))
@@ -153,7 +264,7 @@ class _AddKoiScreenState extends State<AddKoiScreen> {
                 child: ListView(
                   physics: const BouncingScrollPhysics(),
                   children: [
-                    SectionLabel("Informations de base"),
+                    const SectionLabel("Informations de base"),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _nameController,
@@ -162,7 +273,8 @@ class _AddKoiScreenState extends State<AddKoiScreen> {
                         'Nom du koï',
                         Icons.badge_rounded,
                       ),
-                      validator: (value) => (value == null || value.trim().isEmpty)
+                      validator: (value) =>
+                          (value == null || value.trim().isEmpty)
                           ? 'Veuillez entrer un nom'
                           : null,
                     ),
@@ -174,7 +286,8 @@ class _AddKoiScreenState extends State<AddKoiScreen> {
                         'Variété (ex : Kohaku)',
                         Icons.color_lens_rounded,
                       ),
-                      validator: (value) => (value == null || value.trim().isEmpty)
+                      validator: (value) =>
+                          (value == null || value.trim().isEmpty)
                           ? 'Veuillez entrer une variété'
                           : null,
                     ),
@@ -204,7 +317,7 @@ class _AddKoiScreenState extends State<AddKoiScreen> {
                     ),
 
                     const SizedBox(height: 32),
-                    SectionLabel("Naissance & identité"),
+                    const SectionLabel("Naissance & identité"),
                     const SizedBox(height: 12),
                     _buildBirthDateField(),
                     const SizedBox(height: 16),
@@ -213,14 +326,29 @@ class _AddKoiScreenState extends State<AddKoiScreen> {
                       decoration: _inputDecoration('Sexe', Icons.wc_rounded),
                       items: KoiSex.values
                           .map(
-                            (s) => DropdownMenuItem(
-                              value: s,
-                              child: Text(s.label),
-                            ),
+                            (s) =>
+                                DropdownMenuItem(value: s, child: Text(s.label)),
                           )
                           .toList(),
                       onChanged: (value) {
                         if (value != null) setState(() => _sex = value);
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<KoiStatus>(
+                      initialValue: _status,
+                      decoration: _inputDecoration(
+                        'Statut',
+                        Icons.favorite_rounded,
+                      ),
+                      items: KoiStatus.values
+                          .map(
+                            (s) =>
+                                DropdownMenuItem(value: s, child: Text(s.label)),
+                          )
+                          .toList(),
+                      onChanged: (value) {
+                        if (value != null) setState(() => _status = value);
                       },
                     ),
                     const SizedBox(height: 16),
@@ -242,12 +370,12 @@ class _AddKoiScreenState extends State<AddKoiScreen> {
                     ),
 
                     const SizedBox(height: 32),
-                    SectionLabel("Généalogie & origines"),
+                    const SectionLabel("Généalogie & origines"),
                     const SizedBox(height: 12),
                     _buildParentSelectors(user.uid),
 
                     const SizedBox(height: 32),
-                    SectionLabel("Notes"),
+                    const SectionLabel("Notes"),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _notesController,
@@ -262,7 +390,7 @@ class _AddKoiScreenState extends State<AddKoiScreen> {
                     SizedBox(
                       height: 54,
                       child: ElevatedButton(
-                        onPressed: _isLoading ? null : _saveKoi,
+                        onPressed: _isLoading ? null : _save,
                         child: _isLoading
                             ? SizedBox(
                                 width: 20,
@@ -272,7 +400,11 @@ class _AddKoiScreenState extends State<AddKoiScreen> {
                                   color: context.colors.onPrimary,
                                 ),
                               )
-                            : const Text('Sauvegarder la carpe'),
+                            : Text(
+                                _isEditing
+                                    ? 'Enregistrer les modifications'
+                                    : 'Sauvegarder la carpe',
+                              ),
                       ),
                     ),
                     const SizedBox(height: AppSpacing.lg),
@@ -305,20 +437,18 @@ class _AddKoiScreenState extends State<AddKoiScreen> {
 
     return InkWell(
       onTap: _pickBirthDate,
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(AppRadius.field),
       child: InputDecorator(
-        decoration: _inputDecoration(
-          'Date de naissance',
-          Icons.cake_rounded,
-        ).copyWith(
-          suffixIcon: hasDate
-              ? IconButton(
-                  icon: const Icon(Icons.clear_rounded, size: 18),
-                  tooltip: 'Effacer la date',
-                  onPressed: () => setState(() => _birthDate = null),
-                )
-              : const Icon(Icons.calendar_month_rounded, size: 20),
-        ),
+        decoration:
+            _inputDecoration('Date de naissance', Icons.cake_rounded).copyWith(
+              suffixIcon: hasDate
+                  ? IconButton(
+                      icon: const Icon(Icons.clear_rounded, size: 18),
+                      tooltip: 'Effacer la date',
+                      onPressed: () => setState(() => _birthDate = null),
+                    )
+                  : const Icon(Icons.calendar_month_rounded, size: 20),
+            ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -359,7 +489,10 @@ class _AddKoiScreenState extends State<AddKoiScreen> {
           .where('userId', isEqualTo: uid)
           .snapshots(),
       builder: (context, snapshot) {
-        final candidates = snapshot.data?.docs ?? const <QueryDocumentSnapshot>[];
+        // Un koï ne peut pas être son propre parent.
+        final candidates = (snapshot.data?.docs ?? const <QueryDocumentSnapshot>[])
+            .where((doc) => doc.id != widget.existing?.id)
+            .toList();
 
         return Column(
           children: [
@@ -422,10 +555,14 @@ class _AddKoiScreenState extends State<AddKoiScreen> {
         ),
     ];
 
+    // Le parent choisi doit figurer parmi les propositions, sans quoi le menu
+    // déroulant lève une assertion. Le cas se produit tant que la liste
+    // charge, et pour un parent supprimé depuis.
+    final availableIds = candidates.map((doc) => doc.id).toSet();
     final currentValue = switch (mode) {
       _ParentMode.manual => 'manual',
-      _ParentMode.linked => selectedId ?? 'none',
-      _ParentMode.none => 'none',
+      _ParentMode.linked when availableIds.contains(selectedId) => selectedId!,
+      _ => 'none',
     };
 
     return Column(

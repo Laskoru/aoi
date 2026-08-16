@@ -108,8 +108,12 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
           'Nouvelle mesure',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: context.colors.primary,
-        foregroundColor: context.colors.onPrimary,
+        // Les écrans de saisie gardent le fond de l'application : seule la
+        // fiche détail porte une barre colorée, parce qu'elle se pose sur son
+        // en-tête en dégradé.
+        backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+        foregroundColor: context.colors.onSurface,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
       ),
       body: Padding(

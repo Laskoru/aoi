@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../models/koi.dart';
+import 'koi_form_screen.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_widgets.dart';
@@ -60,6 +61,18 @@ class KoiDetailsScreen extends StatelessWidget {
                   koi.name,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
+                actions: [
+                  IconButton(
+                    icon: const Icon(Icons.edit_rounded),
+                    tooltip: 'Modifier la fiche',
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => KoiFormScreen(existing: koi),
+                      ),
+                    ),
+                  ),
+                ],
               ),
               SliverToBoxAdapter(child: _buildHero(context, koi)),
               SliverToBoxAdapter(
