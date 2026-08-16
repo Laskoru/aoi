@@ -1,0 +1,51 @@
+rules_version = '2';
+
+// Règles de sécurité Cloud Storage — AOI KOI
+//
+// Les photos de koï sont rangées par utilisateur :
+//   kois_photos/{userId}/{koiId}.jpg
+//
+// Déploiement : firebase deploy --only storage
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isImage() {
+      return request.resource.contentType.matches('image/.*');
+    }
+
+    function underSizeLimit() {
+      return request.resource.size < 8 * 1024 * 1024; // 8 Mo
+    }
+
+    // --- Photos de koï, rangées par propriétaire ---
+
+    match /kois_photos/{userId}/{fileName} {
+      allow read:         if isSignedIn() && request.auth.uid == userId;
+      allow write:        if isSignedIn() && request.auth.uid == userId
+                          && isImage() && underSizeLimit();
+      allow delete:       if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // --- Ancien emplacement, avant le rangement par utilisateur ---
+    //
+    // Les photos uploadées par les versions précédentes se trouvent
+    // directement dans kois_photos/{koiId}.jpg, sans dossier utilisateur : on
+    // ne peut donc pas en déduire le propriétaire. Lecture seule pour les
+    // utilisateurs connectés, aucune écriture. À supprimer une fois les
+    // anciennes photos migrées.
+    match /kois_photos/{fileName} {
+      allow read:  if isSignedIn();
+      allow write: if false;
+    }
+
+    // Tout le reste est refusé par défaut.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
