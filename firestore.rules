@@ -123,6 +123,28 @@ service cloud.firestore {
       allow delete: if ownsExisting();
     }
 
+    // --- Plantes ---
+
+    match /plants/{plantId} {
+      function wellFormedPlant() {
+        let d = request.resource.data;
+        return (!('name' in d) || (d.name is string && d.name.size() > 0 && d.name.size() <= 80))
+            && (!('species' in d) || d.species == null || (d.species is string && d.species.size() <= 120))
+            && (!('zone' in d) || d.zone in ['berge', 'marecage', 'immergee', 'profonde'])
+            && (!('quantity' in d) || (d.quantity is int && d.quantity >= 0 && d.quantity <= 10000))
+            && (!('isFloating' in d) || d.isFloating is bool)
+            && (!('isOxygenating' in d) || d.isOxygenating is bool)
+            && (!('plantedAt' in d) || d.plantedAt == null || d.plantedAt is timestamp)
+            && (!('notes' in d) || d.notes == null || (d.notes is string && d.notes.size() <= 2000))
+            && (!('pondId' in d) || d.pondId == null || d.pondId is string);
+      }
+
+      allow read:   if ownsExisting();
+      allow create: if ownsIncoming() && wellFormedPlant() && request.resource.data.name is string;
+      allow update: if ownsExisting() && ownsIncoming() && ownerUnchanged() && wellFormedPlant();
+      allow delete: if ownsExisting();
+    }
+
     // --- Mesures de l'eau du bassin ---
 
     match /measurements/{measurementId} {

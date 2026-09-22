@@ -22,6 +22,17 @@ service firebase.storage {
       return request.resource.size < 8 * 1024 * 1024; // 8 Mo
     }
 
+    // --- Médias des autres domaines : plantes, groupes de poissons, bassin ---
+    //
+    // user_media/{userId}/plants/{plantId}.jpg, etc. Un seul bloc suffit :
+    // c'est le segment userId qui porte la propriété, quel que soit le reste.
+    match /user_media/{userId}/{allPaths=**} {
+      allow read:   if isSignedIn() && request.auth.uid == userId;
+      allow write:  if isSignedIn() && request.auth.uid == userId
+                    && isImage() && underSizeLimit();
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+    }
+
     // --- Photos de koï, rangées par propriétaire ---
 
     // Galerie d'un koï : kois_photos/{userId}/{koiId}/{photoId}.jpg

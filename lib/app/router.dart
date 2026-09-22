@@ -3,12 +3,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import '../features/koi/koi_list_screen.dart';
+import '../features/plants/plant_detail_screen.dart';
+import '../features/plants/plant_form_screen.dart';
 import '../features/plants/plant_list_screen.dart';
 import '../features/pond/pond_form_screen.dart';
 import '../features/pond/pond_screen.dart';
 import '../features/water/water_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../models/koi.dart';
+import '../models/plant.dart';
 import '../models/pond.dart';
 import '../screens/add_measurement_screen.dart';
 import '../features/koi/koi_detail_screen.dart';
@@ -98,6 +101,28 @@ GoRouter buildRouter(AuthListenable auth) {
               GoRoute(
                 path: '/plantes',
                 builder: (context, state) => const PlantListScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'new',
+                    builder: (context, state) => const PlantFormScreen(),
+                  ),
+                  GoRoute(
+                    path: ':id',
+                    builder: (context, state) => PlantDetailScreen(
+                      plantId: state.pathParameters['id']!,
+                      initialPlant: state.extra as Plant?,
+                    ),
+                    routes: [
+                      GoRoute(
+                        path: 'edit',
+                        builder: (context, state) => _PlantEditRoute(
+                          plantId: state.pathParameters['id']!,
+                          initial: state.extra as Plant?,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
@@ -206,6 +231,46 @@ class _PondEditRoute extends StatelessWidget {
           );
         }
         return PondFormScreen(pond: Pond.fromFirestore(snapshot.data!));
+      },
+    );
+  }
+}
+
+/// Même principe pour une plante.
+class _PlantEditRoute extends StatelessWidget {
+  final String plantId;
+  final Plant? initial;
+
+  const _PlantEditRoute({required this.plantId, this.initial});
+
+  @override
+  Widget build(BuildContext context) {
+    if (initial != null) return PlantFormScreen(existing: initial);
+
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance.collection('plants').doc(plantId).get(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Scaffold(
+            appBar: AppBar(),
+            body: Padding(
+              padding: const EdgeInsets.all(24),
+              child: ErrorState(error: snapshot.error),
+            ),
+          );
+        }
+        if (!snapshot.hasData) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (!snapshot.data!.exists) {
+          return Scaffold(
+            appBar: AppBar(),
+            body: const Center(child: Text("Cette plante n'existe plus.")),
+          );
+        }
+        return PlantFormScreen(existing: Plant.fromFirestore(snapshot.data!));
       },
     );
   }
