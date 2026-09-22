@@ -50,6 +50,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "144445288274-kqra3lf3qvrfs5i6apbh3aicfklcukh0.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "fr.aoikoi.app",
+            "certificate_hash": "0323b9197f2da4366f31bf56fa0f422ddeece4d6"
+          }
+        },
+        {
           "client_id": "144445288274-m1tccaibpjgj3dtrq6hobeh9qocag4pr.apps.googleusercontent.com",
           "client_type": 3
         }
