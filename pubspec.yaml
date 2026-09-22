@@ -32,6 +32,11 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
+  # Eau animée de la scène du bassin. Compilé pour chaque plateforme au
+  # build ; un repli peint à la main prend le relais s'il ne charge pas.
+  shaders:
+    - shaders/pond_water.frag
+
   # Si vous souhaitez ajouter des images de carpes plus tard, 
   # vous devrez décommenter et configurer cette section :
   # assets:
