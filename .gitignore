@@ -46,3 +46,6 @@ app.*.map.json
 
 # Firebase
 .firebase/
+
+# Configuration locale de l outil
+.claude/
