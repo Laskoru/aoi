@@ -14,12 +14,20 @@ class WaterLayer extends StatelessWidget {
   final Color shallow;
   final Color deep;
 
+  /// Force des filets de lumière : 0 les éteint, 0.22 est la scène pleine.
+  final double causticIntensity;
+
+  /// Amplitude des ondulations : 0 fige la surface, 0.6 est la scène pleine.
+  final double waveAmplitude;
+
   const WaterLayer({
     super.key,
     required this.time,
     required this.animated,
     required this.shallow,
     required this.deep,
+    this.causticIntensity = 0.22,
+    this.waveAmplitude = 0.6,
   });
 
   @override
@@ -47,6 +55,8 @@ class WaterLayer extends StatelessWidget {
             time: time,
             shallow: shallow,
             deep: deep,
+            causticIntensity: causticIntensity,
+            waveAmplitude: waveAmplitude,
           ),
           size: Size.infinite,
         );
@@ -80,12 +90,16 @@ class _WaterShaderPainter extends CustomPainter {
   final double time;
   final Color shallow;
   final Color deep;
+  final double causticIntensity;
+  final double waveAmplitude;
 
   _WaterShaderPainter({
     required this.shader,
     required this.time,
     required this.shallow,
     required this.deep,
+    required this.causticIntensity,
+    required this.waveAmplitude,
   });
 
   @override
@@ -102,14 +116,18 @@ class _WaterShaderPainter extends CustomPainter {
       ..setFloat(6, deep.r)
       ..setFloat(7, deep.g)
       ..setFloat(8, deep.b)
-      ..setFloat(9, 0.22)
-      ..setFloat(10, 0.6);
+      ..setFloat(9, causticIntensity)
+      ..setFloat(10, waveAmplitude);
     canvas.drawRect(Offset.zero & size, Paint()..shader = shader);
   }
 
   @override
   bool shouldRepaint(covariant _WaterShaderPainter old) =>
-      old.time != time || old.shallow != shallow || old.deep != deep;
+      old.time != time ||
+      old.shallow != shallow ||
+      old.deep != deep ||
+      old.causticIntensity != causticIntensity ||
+      old.waveAmplitude != waveAmplitude;
 }
 
 /// Repli sans shader : le même dégradé de profondeur, et trois ondulations

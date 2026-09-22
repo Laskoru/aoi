@@ -1,24 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show Uint8List;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 import '../../models/koi.dart';
 import '../../models/pond.dart';
 import '../../models/water_measurement.dart';
 import '../../services/measurement_service.dart';
 import '../../services/pond_service.dart';
+import '../../theme/app_motion.dart';
 import '../../theme/app_palette.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/app_widgets.dart';
 import '../../theme/pond_status.dart';
 import '../../widgets/koi_card.dart';
 import '../../widgets/water_health_banner.dart';
-import 'scene/pond_scene.dart';
+import 'widgets/calm_water_header.dart';
 import 'widgets/fish_groups_section.dart';
 
-/// L'accueil : le bassin lui-même, vu d'en haut, avec les koï de la
-/// collection qui y nagent. En dessous, ce qu'on veut savoir en arrivant :
-/// l'eau, les koï, les autres habitants.
+/// L'accueil : un en-tête d'eau calme — ou la photo du bassin — avec son nom
+/// et l'état de l'eau, puis ce qu'on veut savoir en arrivant : les koï, en
+/// photos, et les autres habitants.
 class PondScreen extends StatelessWidget {
   const PondScreen({super.key});
 
@@ -30,79 +33,61 @@ class PondScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      body: StreamBuilder<QuerySnapshot>(
-        // Un seul flux pour la scène et l'aperçu : les mêmes koï.
-        stream: FirebaseFirestore.instance
-            .collection('kois')
-            .where('userId', isEqualTo: user.uid)
-            .orderBy('createdAt', descending: true)
-            .snapshots(),
-        builder: (context, snapshot) {
-          final kois = (snapshot.data?.docs ?? const [])
-              .map(Koi.fromFirestore)
-              .toList();
-
-          return CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
-              SliverToBoxAdapter(
-                child: _SceneHeader(uid: user.uid, kois: kois),
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          SliverToBoxAdapter(child: _Header(uid: user.uid)),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.lg,
+                AppSpacing.lg,
+                100,
               ),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.lg,
-                    AppSpacing.lg,
-                    AppSpacing.lg,
-                    100,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // La santé de l'eau avant tout le reste : c'est ce qui peut
+                  // demander une action immédiate.
+                  StreamBuilder<WaterMeasurement?>(
+                    stream: MeasurementService.latest(user.uid),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return ErrorState(error: snapshot.error);
+                      }
+                      final latest = snapshot.data;
+                      if (latest == null) return const SizedBox.shrink();
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: AppSpacing.xl),
+                        child: WaterHealthBanner(measurement: latest),
+                      );
+                    },
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // La santé de l'eau avant tout le reste : c'est ce qui
-                      // peut demander une action immédiate.
-                      StreamBuilder<WaterMeasurement?>(
-                        stream: MeasurementService.latest(user.uid),
-                        builder: (context, snapshot) {
-                          if (snapshot.hasError) {
-                            return ErrorState(error: snapshot.error);
-                          }
-                          final latest = snapshot.data;
-                          if (latest == null) return const SizedBox.shrink();
-                          return Padding(
-                            padding: const EdgeInsets.only(
-                              bottom: AppSpacing.xl,
-                            ),
-                            child: WaterHealthBanner(measurement: latest),
-                          );
-                        },
-                      ),
 
-                      SectionHeader(
-                        title: "Mes koï",
-                        icon: Icons.auto_awesome_mosaic_rounded,
-                        trailing: TextButton(
-                          onPressed: () => context.go('/koi'),
-                          child: const Text("Voir tout"),
-                        ),
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      _KoiPreview(snapshot: snapshot, kois: kois),
-
-                      const SizedBox(height: AppSpacing.xl),
-                      const SectionHeader(
-                        title: "Autres habitants",
-                        icon: Icons.groups_rounded,
-                      ),
-                      const SizedBox(height: AppSpacing.md),
-                      FishGroupsSection(uid: user.uid),
-                    ],
+                  SectionHeader(
+                    title: "Mes koï",
+                    icon: Icons.auto_awesome_mosaic_rounded,
+                    trailing: TextButton(
+                      onPressed: () => context.go('/koi'),
+                      child: const Text("Voir tout"),
+                    ),
                   ),
-                ),
+                  const SizedBox(height: AppSpacing.md),
+                  _KoiCarousel(uid: user.uid),
+
+                  const SizedBox(height: AppSpacing.xl),
+                  const SectionHeader(
+                    title: "Autres habitants",
+                    icon: Icons.groups_rounded,
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  FishGroupsSection(uid: user.uid),
+                ],
               ),
-            ],
-          );
-        },
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => context.push('/eau/nouvelle'),
@@ -122,95 +107,53 @@ class PondScreen extends StatelessWidget {
   }
 }
 
-/// La scène, et par-dessus : la marque, le nom du bassin, l'état de l'eau,
-/// et le nombre de koï que la scène n'a pas pu dessiner.
-class _SceneHeader extends StatelessWidget {
+/// Marque, nom et dimensions du bassin, état de l'eau — sur l'eau calme, ou
+/// sur la photo du bassin si l'utilisateur en a choisi une.
+class _Header extends StatelessWidget {
   final String uid;
-  final List<Koi> kois;
 
-  const _SceneHeader({required this.uid, required this.kois});
+  const _Header({required this.uid});
 
   @override
   Widget build(BuildContext context) {
-    final height = MediaQuery.of(context).size.height * 0.46;
-    final alive = kois.where((k) => k.status == KoiStatus.alive).length;
-    final hidden = alive > 24 ? alive - 24 : 0;
+    final topInset = MediaQuery.of(context).padding.top;
 
-    return ClipRRect(
-      borderRadius: const BorderRadius.only(
-        bottomLeft: Radius.circular(32),
-        bottomRight: Radius.circular(32),
-      ),
-      child: SizedBox(
-        height: height,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            PondScene(
-              kois: kois,
-              onKoiTap: (koi) => context.push('/koi/${koi.id}', extra: koi),
-            ),
-
-            // Voile en haut, pour que la marque et le nom restent lisibles
-            // quelle que soit l'eau derrière.
-            IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.42),
-                      Colors.transparent,
+    return StreamBuilder<Pond?>(
+      stream: PondService.defaultOf(uid),
+      builder: (context, snapshot) {
+        final pond = snapshot.data;
+        return CalmWaterHeader(
+          height: 232 + topInset,
+          imageUrl: pond?.imageUrl,
+          child: SafeArea(
+            bottom: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg,
+                AppSpacing.sm,
+                AppSpacing.md,
+                AppSpacing.lg,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const _Wordmark(),
+                      const Spacer(),
+                      if (pond != null) _PondMenu(pond: pond),
                     ],
-                    stops: const [0.0, 0.45],
                   ),
-                ),
+                  const Spacer(),
+                  _PondName(pond: pond),
+                  const SizedBox(height: AppSpacing.md),
+                  _WaterPill(uid: uid),
+                ],
               ),
             ),
-
-            SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg,
-                  AppSpacing.sm,
-                  AppSpacing.md,
-                  AppSpacing.md,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const _Wordmark(),
-                        const Spacer(),
-                        _PondEditButton(uid: uid),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    _PondName(uid: uid),
-                    const Spacer(),
-                    Row(
-                      children: [
-                        _WaterPill(uid: uid),
-                        const Spacer(),
-                        if (hidden > 0)
-                          StatusPill(
-                            label: "+$hidden KOÏ",
-                            color: Colors.white,
-                            background: Colors.black.withValues(alpha: 0.35),
-                            icon: Icons.visibility_off_rounded,
-                          ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
@@ -237,77 +180,151 @@ class _Wordmark extends StatelessWidget {
   }
 }
 
-class _PondName extends StatelessWidget {
-  final String uid;
+/// Modifier le bassin, choisir ou retirer sa photo.
+class _PondMenu extends StatelessWidget {
+  final Pond pond;
 
-  const _PondName({required this.uid});
+  const _PondMenu({required this.pond});
+
+  Future<void> _pickPhoto(BuildContext context) async {
+    final XFile? picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 75,
+      maxWidth: 2000,
+    );
+    if (picked == null || !context.mounted) return;
+
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(const SnackBar(content: Text("Envoi de la photo…")));
+    try {
+      final Uint8List bytes = await picked.readAsBytes();
+      await PondService.setPhoto(pond, bytes);
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        const SnackBar(content: Text("Photo du bassin mise à jour.")),
+      );
+    } catch (e) {
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(content: Text("Erreur lors du transfert : $e")),
+      );
+    }
+  }
+
+  Future<void> _removePhoto(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await PondService.removePhoto(pond);
+      messenger.showSnackBar(
+        const SnackBar(content: Text("Photo retirée : retour à l'eau.")),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text("Suppression impossible : $e")),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<Pond?>(
-      stream: PondService.defaultOf(uid),
-      builder: (context, snapshot) {
-        final pond = snapshot.data;
-        final details = [
-          if (pond?.volumeLiters != null)
-            "${pond!.volumeLiters!.toStringAsFixed(0)} L",
-          if (pond?.depthCm != null)
-            "${pond!.depthCm!.toStringAsFixed(0)} cm de profondeur",
-        ];
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              pond?.name ?? "Mon bassin",
-              style: const TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                letterSpacing: -0.6,
-                color: Colors.white,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.more_horiz_rounded, color: Colors.white),
+      tooltip: "Options du bassin",
+      onSelected: (value) {
+        switch (value) {
+          case 'edit':
+            context.push('/bassin/edit', extra: pond);
+          case 'photo':
+            _pickPhoto(context);
+          case 'remove':
+            _removePhoto(context);
+        }
+      },
+      itemBuilder: (context) => [
+        const PopupMenuItem(
+          value: 'edit',
+          child: ListTile(
+            leading: Icon(Icons.tune_rounded),
+            title: Text("Modifier le bassin"),
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+        PopupMenuItem(
+          value: 'photo',
+          child: ListTile(
+            leading: const Icon(Icons.add_a_photo_rounded),
+            title: Text(
+              pond.imageUrl == null
+                  ? "Ajouter une photo du bassin"
+                  : "Changer la photo",
             ),
-            if (details.isNotEmpty)
-              Text(
-                details.join(" · "),
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w500,
-                  color: Colors.white.withValues(alpha: 0.8),
-                ),
-              ),
-          ],
-        );
-      },
+            contentPadding: EdgeInsets.zero,
+          ),
+        ),
+        if (pond.imageUrl != null)
+          PopupMenuItem(
+            value: 'remove',
+            child: ListTile(
+              leading: Icon(Icons.water_rounded, color: context.colors.primary),
+              title: const Text("Retirer la photo, revenir à l'eau"),
+              contentPadding: EdgeInsets.zero,
+            ),
+          ),
+      ],
     );
   }
 }
 
-class _PondEditButton extends StatelessWidget {
-  final String uid;
+class _PondName extends StatelessWidget {
+  final Pond? pond;
 
-  const _PondEditButton({required this.uid});
+  const _PondName({required this.pond});
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<Pond?>(
-      stream: PondService.defaultOf(uid),
-      builder: (context, snapshot) {
-        final pond = snapshot.data;
-        if (pond == null) return const SizedBox(width: 48, height: 48);
-        return IconButton(
-          icon: const Icon(Icons.tune_rounded),
-          color: Colors.white,
-          tooltip: "Modifier le bassin",
-          onPressed: () => context.push('/bassin/edit', extra: pond),
-        );
-      },
+    final details = [
+      if (pond?.volumeLiters != null)
+        "${pond!.volumeLiters!.toStringAsFixed(0)} L",
+      if (pond?.depthCm != null)
+        "${pond!.depthCm!.toStringAsFixed(0)} cm de profondeur",
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Bienvenue dans ton écosystème,",
+          style: TextStyle(
+            fontSize: 13,
+            color: Colors.white.withValues(alpha: 0.75),
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          pond?.name ?? "Mon bassin",
+          style: const TextStyle(
+            fontSize: 30,
+            fontWeight: FontWeight.bold,
+            letterSpacing: -0.6,
+            color: Colors.white,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        if (details.isNotEmpty)
+          Text(
+            details.join(" · "),
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w500,
+              color: Colors.white.withValues(alpha: 0.8),
+            ),
+          ),
+      ],
     );
   }
 }
 
-/// L'état de l'eau, résumé en une pastille sur la scène.
+/// L'état de l'eau, résumé en une pastille ; toucher ouvre l'onglet Eau.
 class _WaterPill extends StatelessWidget {
   final String uid;
 
@@ -346,47 +363,60 @@ class _WaterPill extends StatelessWidget {
   }
 }
 
-/// Les quatre koï les plus récents. La grille complète vit dans son onglet.
-class _KoiPreview extends StatelessWidget {
-  final AsyncSnapshot<QuerySnapshot> snapshot;
-  final List<Koi> kois;
+/// Les koï en photos, à faire défiler du doigt. La grille complète vit dans
+/// son onglet.
+class _KoiCarousel extends StatelessWidget {
+  final String uid;
 
-  const _KoiPreview({required this.snapshot, required this.kois});
+  const _KoiCarousel({required this.uid});
 
   @override
   Widget build(BuildContext context) {
-    if (snapshot.hasError) return ErrorState(error: snapshot.error);
-    if (snapshot.connectionState == ConnectionState.waiting) {
-      return const Center(
-        child: Padding(
-          padding: EdgeInsets.all(AppSpacing.lg),
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
-    if (kois.isEmpty) {
-      return EmptyState(
-        icon: Icons.waves_rounded,
-        title: "Votre collection est vide",
-        message:
-            "Ajoutez vos premières carpes koï : elles apparaîtront dans le bassin.",
-        actionLabel: "Ajouter un koï",
-        onAction: () => context.push('/koi/new'),
-      );
-    }
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('kois')
+          .where('userId', isEqualTo: uid)
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) return ErrorState(error: snapshot.error);
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox(
+            height: 200,
+            child: Center(child: CircularProgressIndicator()),
+          );
+        }
+        final kois = (snapshot.data?.docs ?? const [])
+            .map(Koi.fromFirestore)
+            .toList();
+        if (kois.isEmpty) {
+          return EmptyState(
+            icon: Icons.waves_rounded,
+            title: "Votre collection est vide",
+            message:
+                "Ajoutez vos premières carpes koï pour suivre leur croissance et leur lignée.",
+            actionLabel: "Ajouter un koï",
+            onAction: () => context.push('/koi/new'),
+          );
+        }
 
-    final preview = kois.take(4).toList();
-    return GridView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: AppSpacing.md,
-        mainAxisSpacing: AppSpacing.md,
-        childAspectRatio: 0.78,
-      ),
-      itemCount: preview.length,
-      itemBuilder: (context, index) => KoiCard(koi: preview[index]),
+        return SizedBox(
+          height: 208,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            clipBehavior: Clip.none,
+            itemCount: kois.length,
+            separatorBuilder: (context, index) =>
+                const SizedBox(width: AppSpacing.md),
+            itemBuilder: (context, index) => StaggerIn(
+              key: ValueKey(kois[index].id),
+              index: index,
+              child: SizedBox(width: 160, child: KoiCard(koi: kois[index])),
+            ),
+          ),
+        );
+      },
     );
   }
 }

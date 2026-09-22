@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart' show Uint8List, debugPrint;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import '../models/pond.dart';
 
 /// Accès au bassin de l'utilisateur.
@@ -32,5 +34,26 @@ class PondService {
 
   static Future<void> update(Pond pond) {
     return _collection.doc(pond.id).update(pond.toMap());
+  }
+
+  static String _photoPath(Pond pond) =>
+      'user_media/${pond.userId}/ponds/${pond.id}.jpg';
+
+  /// La photo du bassin, affichée en fond de l'accueil à la place de l'eau.
+  static Future<void> setPhoto(Pond pond, Uint8List bytes) async {
+    final ref = FirebaseStorage.instance.ref(_photoPath(pond));
+    await ref.putData(bytes, SettableMetadata(contentType: 'image/jpeg'));
+    final url = await ref.getDownloadURL();
+    await _collection.doc(pond.id).update({'imageUrl': url});
+  }
+
+  /// Retire la photo : l'accueil revient à l'eau calme.
+  static Future<void> removePhoto(Pond pond) async {
+    await _collection.doc(pond.id).update({'imageUrl': null});
+    try {
+      await FirebaseStorage.instance.ref(_photoPath(pond)).delete();
+    } catch (e) {
+      debugPrint('[AOI] Photo de bassin non supprimée : $e');
+    }
   }
 }

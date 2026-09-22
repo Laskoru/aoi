@@ -92,17 +92,19 @@ Les fiches créées avant l'ajout de `birthDate` portent un `age` entier, figé
 au moment de la saisie. Il est lu en repli et affiché comme une approximation
 (« ~4 ans »). Renseigner la date de naissance depuis la fiche le supprime.
 
-## La scène du bassin
+## L'en-tête du bassin
 
-L'eau est un fragment shader (`shaders/pond_water.frag`) : dégradé de
-profondeur, ondulations, caustiques, aux couleurs du thème. Les koï sont
-dessinés par code, sans asset : leur longueur suit leur taille réelle, leur
-motif se déduit du nom de variété, et une simulation les fait errer en
-évitant les bords et les voisins. Toucher un koï ouvre sa fiche.
+L'accueil s'ouvre sur une eau presque immobile : le shader
+`shaders/pond_water.frag` (dégradé de profondeur, ondulations, caustiques),
+réglé à un léger jeu de lumière et à un temps ralenti, aux couleurs du
+thème. Par-dessus : le nom du bassin, ses dimensions, l'état de l'eau. Sous
+réduction des animations — réglage système ou préréglage du profil — un
+dégradé peint à la main le remplace, et rien ne bouge.
 
-Sous réduction des animations — réglage système ou préréglage du profil —
-la scène est rendue fixe, avec un dégradé peint à la main à la place du
-shader. Le ticker s'arrête aussi en arrière-plan et hors de l'onglet.
+Une scène complète, où les koï de la collection nagent (dessinés par code,
+motif déduit de la variété, simulation d'errance), reste disponible dans
+`lib/features/pond/scene/` : `PondScene` s'utilise comme un widget, avec ses
+tests. L'accueil ne l'affiche plus, elle a été jugée trop présente.
 
 ## Déployer les règles de sécurité
 
