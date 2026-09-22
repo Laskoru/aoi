@@ -5,11 +5,12 @@ import 'package:go_router/go_router.dart';
 import '../features/koi/koi_list_screen.dart';
 import '../features/plants/plant_list_screen.dart';
 import '../features/pond/pond_form_screen.dart';
+import '../features/pond/pond_screen.dart';
+import '../features/water/water_screen.dart';
 import '../features/profile/profile_screen.dart';
 import '../models/koi.dart';
 import '../models/pond.dart';
 import '../screens/add_measurement_screen.dart';
-import '../screens/dashboard_screen.dart';
 import '../screens/koi_details_screen.dart';
 import '../screens/koi_form_screen.dart';
 import '../screens/login_screen.dart';
@@ -51,7 +52,7 @@ GoRouter buildRouter(AuthListenable auth) {
             routes: [
               GoRoute(
                 path: '/bassin',
-                builder: (context, state) => const DashboardScreen(),
+                builder: (context, state) => const PondScreen(),
                 routes: [
                   GoRoute(
                     path: 'edit',
@@ -104,7 +105,7 @@ GoRouter buildRouter(AuthListenable auth) {
             routes: [
               GoRoute(
                 path: '/eau',
-                builder: (context, state) => const MeasurementsScreen(),
+                builder: (context, state) => const WaterScreen(),
                 routes: [
                   GoRoute(
                     path: 'historique',

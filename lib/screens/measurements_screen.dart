@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../models/water_measurement.dart';
+import '../services/measurement_service.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_widgets.dart';
@@ -36,13 +36,8 @@ class MeasurementsScreen extends StatelessWidget {
       ),
       body: user == null
           ? const Center(child: Text("Session expirée"))
-          : StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('measurements')
-                  .where('userId', isEqualTo: user.uid)
-                  .orderBy('timestamp', descending: true)
-                  .limit(200)
-                  .snapshots(),
+          : StreamBuilder<List<WaterMeasurement>>(
+              stream: MeasurementService.history(user.uid),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
                   return Padding(
@@ -54,8 +49,8 @@ class MeasurementsScreen extends StatelessWidget {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                final docs = snapshot.data?.docs ?? const [];
-                if (docs.isEmpty) {
+                final items = snapshot.data ?? const <WaterMeasurement>[];
+                if (items.isEmpty) {
                   return Padding(
                     padding: const EdgeInsets.all(AppSpacing.lg),
                     child: EmptyState(
@@ -72,12 +67,11 @@ class MeasurementsScreen extends StatelessWidget {
                 return ListView.separated(
                   physics: const BouncingScrollPhysics(),
                   padding: const EdgeInsets.all(AppSpacing.md),
-                  itemCount: docs.length,
+                  itemCount: items.length,
                   separatorBuilder: (context, index) =>
                       const SizedBox(height: AppSpacing.md),
-                  itemBuilder: (context, index) => _MeasurementTile(
-                    measurement: WaterMeasurement.fromFirestore(docs[index]),
-                  ),
+                  itemBuilder: (context, index) =>
+                      _MeasurementTile(measurement: items[index]),
                 );
               },
             ),
@@ -117,10 +111,7 @@ class _MeasurementTile extends StatelessWidget {
 
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await FirebaseFirestore.instance
-          .collection('measurements')
-          .doc(measurement.id)
-          .delete();
+      await MeasurementService.delete(measurement.id);
       messenger.showSnackBar(const SnackBar(content: Text('Relevé supprimé.')));
     } catch (e) {
       messenger.showSnackBar(

@@ -45,6 +45,17 @@ class WaterMeasurement {
     if (gh != null) WaterReading(WaterParameter.gh, gh!),
   ];
 
+  /// La valeur d'un paramètre, `null` s'il n'a pas été relevé.
+  double? valueOf(WaterParameter parameter) => switch (parameter) {
+    WaterParameter.ph => ph,
+    WaterParameter.temperature => temperature,
+    WaterParameter.ammonia => ammonia,
+    WaterParameter.nitrite => nitrite,
+    WaterParameter.nitrate => nitrate,
+    WaterParameter.kh => kh,
+    WaterParameter.gh => gh,
+  };
+
   Map<String, dynamic> toMap() => {
     'userId': userId,
     'ph': ph,

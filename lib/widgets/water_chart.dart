@@ -1,23 +1,23 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
+import '../models/water_measurement.dart';
+import '../services/measurement_service.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_widgets.dart';
+import '../utils/water_logic.dart';
 
 /// Courbe d'un paramètre de l'eau sur les derniers relevés.
 class WaterChart extends StatelessWidget {
   final String userId;
-
-  /// Nom du champ Firestore à tracer : `ph` ou `temperature`.
-  final String field;
+  final WaterParameter parameter;
   final Color color;
 
   const WaterChart({
     super.key,
     required this.userId,
-    required this.field,
+    required this.parameter,
     required this.color,
   });
 
@@ -25,13 +25,9 @@ class WaterChart extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = context.colors;
 
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('measurements')
-          .where('userId', isEqualTo: userId)
-          .orderBy('timestamp', descending: true)
-          .limit(7) // Sept points suffisent à lire une tendance.
-          .snapshots(),
+    return StreamBuilder<List<WaterMeasurement>>(
+      // Sept points suffisent à lire une tendance.
+      stream: MeasurementService.series(userId, limit: 7),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
           return Center(child: ErrorState(error: snapshot.error));
@@ -39,7 +35,14 @@ class WaterChart extends StatelessWidget {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+
+        // Un relevé rapide peut ne pas contenir ce paramètre : on l'ignore
+        // plutôt que de tracer un zéro qui ressemblerait à une chute.
+        final points = (snapshot.data ?? const <WaterMeasurement>[])
+            .where((m) => m.valueOf(parameter) != null)
+            .toList();
+
+        if (points.isEmpty) {
           return Center(
             child: Text(
               "Aucune donnée pour le moment",
@@ -48,21 +51,16 @@ class WaterChart extends StatelessWidget {
           );
         }
 
-        // Inversion pour lire chronologiquement, de gauche à droite.
-        final docs = snapshot.data!.docs.reversed.toList();
-
-        final spots = <FlSpot>[];
-        final labels = <String>[];
-
-        for (int i = 0; i < docs.length; i++) {
-          final data = docs[i].data() as Map<String, dynamic>;
-          spots.add(FlSpot(i.toDouble(), (data[field] as num? ?? 0).toDouble()));
-
-          final timestamp = data['timestamp'] as Timestamp?;
-          labels.add(
-            timestamp == null ? "" : DateFormat('dd/MM').format(timestamp.toDate()),
-          );
-        }
+        final spots = <FlSpot>[
+          for (int i = 0; i < points.length; i++)
+            FlSpot(i.toDouble(), points[i].valueOf(parameter)!),
+        ];
+        final labels = [
+          for (final m in points)
+            m.measuredAt == null
+                ? ""
+                : DateFormat('dd/MM').format(m.measuredAt!),
+        ];
 
         final axisStyle = context.texts.labelSmall?.copyWith(
           fontWeight: FontWeight.bold,
@@ -119,7 +117,7 @@ class WaterChart extends StatelessWidget {
                 getTooltipItems: (touchedSpots) => touchedSpots
                     .map(
                       (spot) => LineTooltipItem(
-                        "${spot.y.toStringAsFixed(1)}${field == 'temperature' ? ' °C' : ''}",
+                        "${spot.y.toStringAsFixed(1)}${parameter.unit.isEmpty ? '' : ' ${parameter.unit}'}",
                         TextStyle(
                           color: colors.onInverseSurface,
                           fontWeight: FontWeight.bold,
@@ -168,7 +166,7 @@ class WaterChart extends StatelessWidget {
   }
 }
 
-/// Conteneur commun aux graphiques : hauteur fixe, surface de carte, titre.
+/// Conteneur commun aux graphiques : hauteur fixe, surface de carte.
 class ChartCard extends StatelessWidget {
   final Widget child;
   final double height;

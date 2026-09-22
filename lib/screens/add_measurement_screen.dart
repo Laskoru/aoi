@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/water_measurement.dart';
+import '../services/measurement_service.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_widgets.dart';
@@ -18,10 +18,11 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
 
   final _phController = TextEditingController();
   final _tempController = TextEditingController();
-  final _khController = TextEditingController();
-  final _ghController = TextEditingController();
+  final _ammoniaController = TextEditingController();
   final _nitriteController = TextEditingController();
   final _nitrateController = TextEditingController();
+  final _khController = TextEditingController();
+  final _ghController = TextEditingController();
 
   bool _isLoading = false;
 
@@ -29,10 +30,11 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
   void dispose() {
     _phController.dispose();
     _tempController.dispose();
-    _khController.dispose();
-    _ghController.dispose();
+    _ammoniaController.dispose();
     _nitriteController.dispose();
     _nitrateController.dispose();
+    _khController.dispose();
+    _ghController.dispose();
     super.dispose();
   }
 
@@ -53,21 +55,19 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final measurement = WaterMeasurement(
-        id: '',
-        userId: user.uid,
-        ph: _parse(_phController) ?? 7.0,
-        temperature: _parse(_tempController) ?? 0.0,
-        kh: _parse(_khController),
-        gh: _parse(_ghController),
-        nitrite: _parse(_nitriteController),
-        nitrate: _parse(_nitrateController),
+      await MeasurementService.create(
+        WaterMeasurement(
+          id: '',
+          userId: user.uid,
+          ph: _parse(_phController) ?? 7.0,
+          temperature: _parse(_tempController) ?? 0.0,
+          ammonia: _parse(_ammoniaController),
+          nitrite: _parse(_nitriteController),
+          nitrate: _parse(_nitrateController),
+          kh: _parse(_khController),
+          gh: _parse(_ghController),
+        ),
       );
-
-      await FirebaseFirestore.instance.collection('measurements').add({
-        ...measurement.toMap(),
-        'timestamp': FieldValue.serverTimestamp(),
-      });
 
       if (mounted) {
         _showSnack('Mesure enregistrée !');
@@ -123,7 +123,7 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
           child: ListView(
             physics: const BouncingScrollPhysics(),
             children: [
-              SectionLabel("Relevé principal"),
+              const SectionLabel("Relevé principal"),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _phController,
@@ -151,38 +151,18 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
               ),
 
               const SizedBox(height: 32),
-              SectionLabel("Bandelettes (optionnel)"),
+              const SectionLabel("Cycle de l'azote (optionnel)"),
               const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextFormField(
-                      controller: _khController,
-                      decoration: _inputDecoration(
-                        'KH',
-                        Icons.water_drop_outlined,
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      validator: (v) => _optionalRange(v, 0, 30),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: TextFormField(
-                      controller: _ghController,
-                      decoration: _inputDecoration(
-                        'GH',
-                        Icons.opacity_rounded,
-                      ),
-                      keyboardType: const TextInputType.numberWithOptions(
-                        decimal: true,
-                      ),
-                      validator: (v) => _optionalRange(v, 0, 30),
-                    ),
-                  ),
-                ],
+              TextFormField(
+                controller: _ammoniaController,
+                decoration: _inputDecoration(
+                  'Ammoniaque NH₃/NH₄ (mg/L)',
+                  Icons.dangerous_rounded,
+                ),
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                validator: (v) => _optionalRange(v, 0, 20),
               ),
               const SizedBox(height: 16),
               Row(
@@ -212,6 +192,41 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
                         decimal: true,
                       ),
                       validator: (v) => _optionalRange(v, 0, 500),
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 32),
+              const SectionLabel("Duretés (optionnel)"),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      controller: _khController,
+                      decoration: _inputDecoration(
+                        'KH (°d)',
+                        Icons.shield_moon_rounded,
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      validator: (v) => _optionalRange(v, 0, 30),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextFormField(
+                      controller: _ghController,
+                      decoration: _inputDecoration(
+                        'GH (°d)',
+                        Icons.opacity_rounded,
+                      ),
+                      keyboardType: const TextInputType.numberWithOptions(
+                        decimal: true,
+                      ),
+                      validator: (v) => _optionalRange(v, 0, 30),
                     ),
                   ),
                 ],
