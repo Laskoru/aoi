@@ -6,10 +6,12 @@ import '../features/koi/koi_list_screen.dart';
 import '../features/plants/plant_detail_screen.dart';
 import '../features/plants/plant_form_screen.dart';
 import '../features/plants/plant_list_screen.dart';
+import '../features/pond/fish_group_form_screen.dart';
 import '../features/pond/pond_form_screen.dart';
 import '../features/pond/pond_screen.dart';
 import '../features/water/water_screen.dart';
 import '../features/profile/profile_screen.dart';
+import '../models/fish_group.dart';
 import '../models/koi.dart';
 import '../models/plant.dart';
 import '../models/pond.dart';
@@ -61,6 +63,17 @@ GoRouter buildRouter(AuthListenable auth) {
                     path: 'edit',
                     builder: (context, state) =>
                         _PondEditRoute(initial: state.extra as Pond?),
+                  ),
+                  GoRoute(
+                    path: 'poissons/new',
+                    builder: (context, state) => const FishGroupFormScreen(),
+                  ),
+                  GoRoute(
+                    path: 'poissons/:id/edit',
+                    builder: (context, state) => _FishGroupEditRoute(
+                      groupId: state.pathParameters['id']!,
+                      initial: state.extra as FishGroup?,
+                    ),
                   ),
                 ],
               ),
@@ -271,6 +284,51 @@ class _PlantEditRoute extends StatelessWidget {
           );
         }
         return PlantFormScreen(existing: Plant.fromFirestore(snapshot.data!));
+      },
+    );
+  }
+}
+
+/// Même principe pour un groupe de poissons.
+class _FishGroupEditRoute extends StatelessWidget {
+  final String groupId;
+  final FishGroup? initial;
+
+  const _FishGroupEditRoute({required this.groupId, this.initial});
+
+  @override
+  Widget build(BuildContext context) {
+    if (initial != null) return FishGroupFormScreen(existing: initial);
+
+    return FutureBuilder<DocumentSnapshot>(
+      future: FirebaseFirestore.instance
+          .collection('fish_groups')
+          .doc(groupId)
+          .get(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Scaffold(
+            appBar: AppBar(),
+            body: Padding(
+              padding: const EdgeInsets.all(24),
+              child: ErrorState(error: snapshot.error),
+            ),
+          );
+        }
+        if (!snapshot.hasData) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (!snapshot.data!.exists) {
+          return Scaffold(
+            appBar: AppBar(),
+            body: const Center(child: Text("Ce groupe n'existe plus.")),
+          );
+        }
+        return FishGroupFormScreen(
+          existing: FishGroup.fromFirestore(snapshot.data!),
+        );
       },
     );
   }

@@ -12,6 +12,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/app_widgets.dart';
 import '../../widgets/koi_card.dart';
 import '../../widgets/water_health_banner.dart';
+import 'widgets/fish_groups_section.dart';
 
 /// L'accueil : le bassin lui-même. Version intermédiaire, en attendant la
 /// scène animée : en-tête du bassin, santé de l'eau, aperçu des habitants.
@@ -78,12 +79,7 @@ class PondScreen extends StatelessWidget {
                     icon: Icons.groups_rounded,
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  const EmptyState(
-                    icon: Icons.groups_rounded,
-                    title: "Bientôt",
-                    message:
-                        "Le suivi des autres espèces par groupe (esturgeons, ides, carassins…) arrive dans une prochaine version.",
-                  ),
+                  FishGroupsSection(uid: user.uid),
                 ],
               ),
             ),

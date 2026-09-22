@@ -145,6 +145,24 @@ service cloud.firestore {
       allow delete: if ownsExisting();
     }
 
+    // --- Groupes de poissons autres que les koï ---
+
+    match /fish_groups/{groupId} {
+      function wellFormedGroup() {
+        let d = request.resource.data;
+        return (!('species' in d) || (d.species is string && d.species.size() > 0 && d.species.size() <= 80))
+            && (!('count' in d) || (d.count is int && d.count >= 0 && d.count <= 100000))
+            && (!('introducedAt' in d) || d.introducedAt == null || d.introducedAt is timestamp)
+            && (!('notes' in d) || d.notes == null || (d.notes is string && d.notes.size() <= 2000))
+            && (!('pondId' in d) || d.pondId == null || d.pondId is string);
+      }
+
+      allow read:   if ownsExisting();
+      allow create: if ownsIncoming() && wellFormedGroup() && request.resource.data.species is string;
+      allow update: if ownsExisting() && ownsIncoming() && ownerUnchanged() && wellFormedGroup();
+      allow delete: if ownsExisting();
+    }
+
     // --- Mesures de l'eau du bassin ---
 
     match /measurements/{measurementId} {
