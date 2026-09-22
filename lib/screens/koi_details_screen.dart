@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show Uint8List;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../models/koi.dart';
 import '../services/koi_service.dart';
-import 'koi_form_screen.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_widgets.dart';
@@ -69,12 +69,8 @@ class KoiDetailsScreen extends StatelessWidget {
                   IconButton(
                     icon: const Icon(Icons.edit_rounded),
                     tooltip: 'Modifier la fiche',
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => KoiFormScreen(existing: koi),
-                      ),
-                    ),
+                    onPressed: () =>
+                        context.push('/koi/${loaded.id}/edit', extra: loaded),
                   ),
                 ],
               ),
@@ -473,13 +469,7 @@ class KoiDetailsScreen extends StatelessWidget {
             parent.variety.isEmpty ? "Variété inconnue" : parent.variety,
             icon,
             accent,
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) =>
-                    KoiDetailsScreen(koiId: parent.id, initialKoi: parent),
-              ),
-            ),
+            onTap: () => context.push('/koi/${parent.id}', extra: parent),
           );
         }
         return _parentCard(context, label, "Inconnu", "Introuvable", icon, accent);

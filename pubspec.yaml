@@ -22,6 +22,7 @@ dependencies:
   google_sign_in: 7.2.0     # Ajout pour Google
   image_picker: ^1.1.2       # Ajoute cette ligne
   firebase_storage: ^13.4.1
+  go_router: ^18.0.1          # Routes, deep links PWA, onglets à état préservé
 dev_dependencies:
   flutter_test:
     sdk: flutter

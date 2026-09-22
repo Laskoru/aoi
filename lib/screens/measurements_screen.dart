@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'add_measurement_screen.dart';
 import '../models/water_measurement.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_theme.dart';
@@ -64,12 +64,7 @@ class MeasurementsScreen extends StatelessWidget {
                       message:
                           "Les mesures que vous enregistrez apparaîtront ici.",
                       actionLabel: "Ajouter une mesure",
-                      onAction: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const AddMeasurementScreen(),
-                        ),
-                      ),
+                      onAction: () => context.push('/eau/nouvelle'),
                     ),
                   );
                 }
