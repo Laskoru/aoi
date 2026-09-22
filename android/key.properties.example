@@ -1,0 +1,14 @@
+# Copier ce fichier en android/key.properties et remplir les valeurs.
+# key.properties est ignoré par git : la clé de signature et ses mots de
+# passe ne doivent jamais être versionnés.
+#
+# Créer la clé (une seule fois, à conserver précieusement — sans elle,
+# aucune mise à jour de l'application ne pourra plus être publiée) :
+#
+#   keytool -genkey -v -keystore %USERPROFILE%\aoikoi-upload.jks ^
+#     -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+#
+storePassword=REMPLIR
+keyPassword=REMPLIR
+keyAlias=upload
+storeFile=C:/Users/hugo_/aoikoi-upload.jks

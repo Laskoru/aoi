@@ -49,3 +49,8 @@ app.*.map.json
 
 # Configuration locale de l outil
 .claude/
+
+# Signature Android : la cle et son mot de passe ne vont jamais dans git
+android/key.properties
+*.jks
+*.keystore

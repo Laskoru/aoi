@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Politique de confidentialité — AOI KOI</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body {
+      margin: 0; padding: 32px 20px 64px;
+      font: 16px/1.6 -apple-system, "Segoe UI", Roboto, sans-serif;
+      background: #F8F5F0; color: #1C1B1A;
+      max-width: 720px; margin-inline: auto;
+    }
+    @media (prefers-color-scheme: dark) {
+      body { background: #121417; color: #F2EFEA; }
+      a { color: #5FA8C7; }
+    }
+    h1 { font-size: 26px; letter-spacing: -0.5px; margin-bottom: 4px; }
+    h2 { font-size: 18px; margin-top: 32px; }
+    .muted { color: #7A736A; font-size: 14px; }
+    a { color: #14425A; }
+  </style>
+</head>
+<body>
+  <h1>Politique de confidentialité</h1>
+  <p class="muted">AOI KOI — dernière mise à jour : septembre 2026</p>
+
+  <p>AOI KOI est une application de suivi de bassin de jardin : koï, autres
+  poissons, plantes et qualité de l'eau. Elle est éditée par un particulier,
+  sans but commercial, sans publicité et sans revente de données.</p>
+
+  <h2>Données collectées</h2>
+  <ul>
+    <li><strong>Compte Google</strong> : lors de la connexion, l'application
+    reçoit votre nom, votre adresse e-mail et votre photo de profil, via
+    Firebase Authentication. Ils servent uniquement à vous identifier et à
+    afficher votre prénom.</li>
+    <li><strong>Vos saisies</strong> : fiches de koï, de poissons et de
+    plantes, relevés d'eau, informations sur votre bassin. Elles sont
+    stockées dans Cloud Firestore (Google), rattachées à votre compte.</li>
+    <li><strong>Vos photos</strong> : celles que vous ajoutez à une fiche ou
+    au bassin, stockées dans Cloud Storage (Google).</li>
+  </ul>
+
+  <h2>Ce que l'application ne fait pas</h2>
+  <ul>
+    <li>Aucune publicité, aucun traceur publicitaire, aucune revente.</li>
+    <li>Aucun accès à vos contacts, à votre position ou à vos autres photos :
+    seule la photo que vous choisissez explicitement est envoyée.</li>
+    <li>Aucun partage avec un tiers autre que Google, qui héberge les données
+    (Firebase) et fournit la connexion.</li>
+  </ul>
+
+  <h2>Accès et sécurité</h2>
+  <p>Vos données ne sont lisibles que par vous : les règles de sécurité de
+  la base de données restreignent chaque document à son propriétaire. Les
+  échanges sont chiffrés (HTTPS).</p>
+
+  <h2>Conservation et suppression</h2>
+  <p>Les données sont conservées tant que votre compte existe. Vous pouvez
+  supprimer chaque fiche, photo ou relevé depuis l'application. Pour
+  supprimer l'intégralité de votre compte et de vos données, écrivez à
+  l'adresse ci-dessous : la suppression est effectuée sous 30 jours.</p>
+
+  <h2>Contact</h2>
+  <p>Pour toute question ou demande de suppression :
+  <a href="mailto:burelhugo35@gmail.com">burelhugo35@gmail.com</a></p>
+</body>
+</html>
