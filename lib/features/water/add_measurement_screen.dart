@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../models/water_measurement.dart';
-import '../services/measurement_service.dart';
-import '../theme/app_palette.dart';
-import '../theme/app_theme.dart';
-import '../theme/app_widgets.dart';
+import '../../models/water_measurement.dart';
+import '../../services/measurement_service.dart';
+import '../../theme/app_palette.dart';
+import '../../theme/app_theme.dart';
+import '../../theme/app_widgets.dart';
 
 class AddMeasurementScreen extends StatefulWidget {
   const AddMeasurementScreen({super.key});

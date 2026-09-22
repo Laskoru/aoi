@@ -170,7 +170,7 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
       }
 
       if (mounted) {
-        _showSnack(_isEditing ? 'Fiche mise à jour.' : 'Carpe koï ajoutée ! 🎉');
+        _showSnack(_isEditing ? 'Fiche mise à jour.' : 'Carpe koï ajoutée.');
         Navigator.pop(context);
       }
     } catch (e) {

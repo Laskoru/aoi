@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/koi.dart';
+import '../../theme/app_motion.dart';
 import '../../theme/app_palette.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/app_widgets.dart';
@@ -87,7 +88,11 @@ class KoiListScreen extends StatelessWidget {
                     childAspectRatio: 0.78,
                   ),
                   delegate: SliverChildBuilderDelegate(
-                    (context, index) => KoiCard(koi: kois[index]),
+                    (context, index) => StaggerIn(
+                      key: ValueKey(kois[index].id),
+                      index: index,
+                      child: KoiCard(koi: kois[index]),
+                    ),
                     childCount: kois.length,
                   ),
                 );
