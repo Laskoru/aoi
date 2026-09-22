@@ -61,6 +61,10 @@ class Koi {
   final String? origin;
   final String? notes;
   final String? imageUrl;
+
+  /// Bassin d'appartenance. `null` désigne le bassin par défaut : les fiches
+  /// créées avant l'arrivée des bassins n'ont pas eu à être réécrites.
+  final String? pondId;
   final String? fatherId;
   final String? fatherNameManual;
   final String? motherId;
@@ -81,6 +85,7 @@ class Koi {
     this.origin,
     this.notes,
     this.imageUrl,
+    this.pondId,
     this.fatherId,
     this.fatherNameManual,
     this.motherId,
@@ -186,6 +191,7 @@ class Koi {
     'origin': origin,
     'notes': notes,
     'imageUrl': imageUrl,
+    'pondId': pondId,
     'fatherId': fatherId,
     'fatherNameManual': fatherNameManual,
     'motherId': motherId,
@@ -212,6 +218,7 @@ class Koi {
       origin: data['origin'] as String?,
       notes: data['notes'] as String?,
       imageUrl: data['imageUrl'] as String?,
+      pondId: data['pondId'] as String?,
       fatherId: data['fatherId'] as String?,
       fatherNameManual: data['fatherNameManual'] as String?,
       motherId: data['motherId'] as String?,

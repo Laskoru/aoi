@@ -31,6 +31,45 @@ class KoiService {
     });
   }
 
+  // --- Croissance et naissance ---
+
+  /// Les derniers relevés de taille, du plus ancien au plus récent : prêts à
+  /// tracer de gauche à droite.
+  static Stream<List<GrowthEntry>> growthOf(String koiId, {int limit = 10}) {
+    return _collection
+        .doc(koiId)
+        .collection('growth')
+        .orderBy('timestamp', descending: true)
+        .limit(limit)
+        .snapshots()
+        .map((snap) => snap.docs.reversed.map(GrowthEntry.fromFirestore).toList());
+  }
+
+  /// Enregistre une nouvelle taille.
+  ///
+  /// La taille courante sur la fiche et le point d'historique doivent
+  /// toujours bouger ensemble : un batch garantit qu'aucun des deux ne part
+  /// sans l'autre.
+  static Future<void> recordSize(String koiId, double size) {
+    final koiRef = _collection.doc(koiId);
+    final batch = FirebaseFirestore.instance.batch();
+    batch.update(koiRef, {'size': size});
+    batch.set(koiRef.collection('growth').doc(), {
+      'size': size,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+    return batch.commit();
+  }
+
+  /// Renseigne ou corrige la naissance, et retire l'ancien champ `age` pour
+  /// qu'une valeur périmée ne subsiste pas à côté de la vraie.
+  static Future<void> setBirthDate(String koiId, DateTime date) {
+    return _collection.doc(koiId).update({
+      'birthDate': Timestamp.fromDate(date),
+      'age': FieldValue.delete(),
+    });
+  }
+
   // --- Galerie photo ---
 
   /// Flux des photos d'un koï, de la plus récente à la plus ancienne.

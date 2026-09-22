@@ -11,8 +11,8 @@ import '../features/profile/profile_screen.dart';
 import '../models/koi.dart';
 import '../models/pond.dart';
 import '../screens/add_measurement_screen.dart';
-import '../screens/koi_details_screen.dart';
-import '../screens/koi_form_screen.dart';
+import '../features/koi/koi_detail_screen.dart';
+import '../features/koi/koi_form_screen.dart';
 import '../screens/login_screen.dart';
 import '../screens/measurements_screen.dart';
 import '../theme/app_widgets.dart';
@@ -75,7 +75,7 @@ GoRouter buildRouter(AuthListenable auth) {
                   ),
                   GoRoute(
                     path: ':id',
-                    builder: (context, state) => KoiDetailsScreen(
+                    builder: (context, state) => KoiDetailScreen(
                       koiId: state.pathParameters['id']!,
                       initialKoi: state.extra as Koi?,
                     ),

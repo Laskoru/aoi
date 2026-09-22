@@ -9,6 +9,9 @@ import '../utils/water_logic.dart';
 class WaterMeasurement {
   final String id;
   final String userId;
+
+  /// Bassin d'appartenance. `null` désigne le bassin par défaut.
+  final String? pondId;
   final DateTime? measuredAt;
   final double ph;
   final double temperature;
@@ -21,6 +24,7 @@ class WaterMeasurement {
   const WaterMeasurement({
     required this.id,
     required this.userId,
+    this.pondId,
     required this.ph,
     required this.temperature,
     this.measuredAt,
@@ -58,6 +62,7 @@ class WaterMeasurement {
 
   Map<String, dynamic> toMap() => {
     'userId': userId,
+    if (pondId != null) 'pondId': pondId,
     'ph': ph,
     'temperature': temperature,
     if (kh != null) 'kh': kh,
@@ -72,6 +77,7 @@ class WaterMeasurement {
     return WaterMeasurement(
       id: doc.id,
       userId: data['userId'] as String? ?? '',
+      pondId: data['pondId'] as String?,
       ph: (data['ph'] as num? ?? 0).toDouble(),
       temperature: (data['temperature'] as num? ?? 0).toDouble(),
       measuredAt: (data['timestamp'] as Timestamp?)?.toDate(),

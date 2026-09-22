@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import '../models/koi.dart';
-import '../services/koi_service.dart';
-import '../theme/app_palette.dart';
-import '../theme/app_theme.dart';
-import '../theme/app_widgets.dart';
+import '../../models/koi.dart';
+import '../../services/koi_service.dart';
+import '../../theme/app_palette.dart';
+import '../../theme/app_theme.dart';
+import '../../theme/app_widgets.dart';
 
 /// Formulaire d'un koï, en création comme en modification.
 ///
@@ -152,6 +152,7 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
         // La photo n'est pas gérée ici : la reprendre telle quelle évite que
         // l'enregistrement du formulaire ne l'efface.
         imageUrl: widget.existing?.imageUrl,
+        pondId: widget.existing?.pondId,
         fatherId: _fatherMode == _ParentMode.linked ? _selectedFatherId : null,
         fatherNameManual: _fatherMode == _ParentMode.manual
             ? _trimmedOrNull(_fatherManualController)
@@ -543,14 +544,29 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
       const DropdownMenuItem(value: 'none', child: Text('Non renseigné')),
       const DropdownMenuItem(
         value: 'manual',
-        child: Text('✍️ Saisie manuelle / autre origine'),
+        child: Row(
+          children: [
+            Icon(Icons.edit_note_rounded, size: 18),
+            SizedBox(width: 8),
+            Text('Saisie manuelle / autre origine'),
+          ],
+        ),
       ),
       for (final doc in candidates)
         DropdownMenuItem(
           value: doc.id,
-          child: Text(
-            '🐟 ${(doc.data() as Map<String, dynamic>)['name'] ?? 'Sans nom'}',
-            overflow: TextOverflow.ellipsis,
+          child: Row(
+            children: [
+              const KoiEmblem(size: 18),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  (doc.data() as Map<String, dynamic>)['name'] as String? ??
+                      'Sans nom',
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
         ),
     ];

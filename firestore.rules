@@ -47,7 +47,8 @@ service cloud.firestore {
             // tolérés le temps de la migration.
             && (!('birthDate' in d) || d.birthDate == null || d.birthDate is timestamp)
             && (!('age' in d) || d.age == null || d.age is number)
-            && (!('notes' in d) || d.notes == null || (d.notes is string && d.notes.size() <= 2000));
+            && (!('notes' in d) || d.notes == null || (d.notes is string && d.notes.size() <= 2000))
+            && (!('pondId' in d) || d.pondId == null || d.pondId is string);
       }
 
       // À la création, on exige en plus le minimum vital.
@@ -132,7 +133,8 @@ service cloud.firestore {
             && d.ph <= 14
             && d.temperature is number
             && d.temperature >= -10
-            && d.temperature <= 60;
+            && d.temperature <= 60
+            && (!('pondId' in d) || d.pondId == null || d.pondId is string);
       }
 
       allow read:   if ownsExisting();

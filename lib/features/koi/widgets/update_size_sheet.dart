@@ -1,0 +1,129 @@
+import 'package:flutter/material.dart';
+import '../../../services/koi_service.dart';
+import '../../../theme/app_palette.dart';
+import '../../../theme/app_theme.dart';
+
+/// Feuille de saisie d'une nouvelle mesure de taille.
+///
+/// C'est un widget à part entière pour que son [TextEditingController] soit
+/// créé et libéré avec elle.
+class UpdateSizeSheet extends StatefulWidget {
+  final String koiId;
+  final double currentSize;
+
+  const UpdateSizeSheet({
+    super.key,
+    required this.koiId,
+    required this.currentSize,
+  });
+
+  @override
+  State<UpdateSizeSheet> createState() => _UpdateSizeSheetState();
+}
+
+class _UpdateSizeSheetState extends State<UpdateSizeSheet> {
+  late final TextEditingController _controller;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(
+      text: widget.currentSize > 0 ? widget.currentSize.toString() : '',
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final newSize = double.tryParse(_controller.text.trim().replaceAll(',', '.'));
+
+    if (newSize == null || newSize <= 0 || newSize > 200) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Entrez une taille valide, en centimètres.")),
+      );
+      return;
+    }
+
+    setState(() => _isSaving = true);
+
+    try {
+      await KoiService.recordSize(widget.koiId, newSize);
+      if (mounted) Navigator.pop(context);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSaving = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text("Enregistrement impossible : $e")));
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        left: AppSpacing.lg,
+        right: AppSpacing.lg,
+        top: AppSpacing.lg,
+        bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            height: 4,
+            width: 40,
+            margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: context.colors.outline,
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+            ),
+          ),
+          Text("Mettre à jour la taille", style: context.texts.headlineMedium),
+          const SizedBox(height: 6),
+          Text(
+            "Elle sera ajoutée à la courbe de croissance.",
+            style: context.texts.bodyMedium,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          TextField(
+            controller: _controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            autofocus: true,
+            onSubmitted: (_) => _isSaving ? null : _save(),
+            decoration: const InputDecoration(
+              labelText: "Nouvelle taille",
+              suffixText: "cm",
+              prefixIcon: Icon(Icons.straighten_rounded, size: 20),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          SizedBox(
+            width: double.infinity,
+            height: 54,
+            child: ElevatedButton(
+              onPressed: _isSaving ? null : _save,
+              child: _isSaving
+                  ? SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: context.colors.onPrimary,
+                      ),
+                    )
+                  : const Text("Confirmer la mesure"),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
