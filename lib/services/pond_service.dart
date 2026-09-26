@@ -47,6 +47,16 @@ class PondService {
     await _collection.doc(pond.id).update({'imageUrl': url});
   }
 
+  /// Supprime le bassin et sa photo.
+  static Future<void> delete(Pond pond) async {
+    await _collection.doc(pond.id).delete();
+    try {
+      await FirebaseStorage.instance.ref(_photoPath(pond)).delete();
+    } catch (e) {
+      debugPrint('[AOI] Photo de bassin non supprimée (sans doute absente) : $e');
+    }
+  }
+
   /// Retire la photo : l'accueil revient à l'eau calme.
   static Future<void> removePhoto(Pond pond) async {
     await _collection.doc(pond.id).update({'imageUrl': null});

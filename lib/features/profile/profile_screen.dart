@@ -8,6 +8,7 @@ import '../../services/pond_service.dart';
 import '../../theme/app_palette.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/app_widgets.dart';
+import 'delete_account_flow.dart';
 
 /// Compte, affichage et bassin. La déconnexion est reléguée tout en bas,
 /// isolée : une action destructrice ne se mélange pas à la navigation.
@@ -95,6 +96,21 @@ class ProfileScreen extends StatelessWidget {
               minimumSize: const Size.fromHeight(52),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(AppRadius.field),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Center(
+            child: TextButton.icon(
+              onPressed: () => startAccountDeletion(context),
+              icon: Icon(
+                Icons.delete_forever_rounded,
+                color: context.pond.danger,
+                size: 18,
+              ),
+              label: Text(
+                "Supprimer mon compte et mes données",
+                style: TextStyle(color: context.pond.danger),
               ),
             ),
           ),

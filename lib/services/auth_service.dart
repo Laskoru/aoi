@@ -19,12 +19,60 @@ class AuthService {
   /// Ouvre la connexion Google et ouvre une session Firebase.
   ///
   /// Ne renvoie rien : c'est `authStateChanges` qui prévient l'interface, via
-  /// l'`AuthGate` de `main.dart`.
+  /// la redirection du routeur.
   static Future<void> signInWithGoogle() {
     return kIsWeb ? _signInOnWeb() : _signInOnMobile();
   }
 
   static Future<void> signOut() => FirebaseAuth.instance.signOut();
+
+  /// Fait confirmer son identité à l'utilisateur avant une opération
+  /// irréversible.
+  ///
+  /// Firebase refuse de supprimer un compte dont la dernière connexion date de
+  /// plus de cinq minutes. Si elle est plus récente que quatre minutes, on
+  /// évite de redemander ; sinon Google rouvre sa fenêtre de connexion, sur le
+  /// même compte.
+  static Future<void> reauthenticate() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(code: 'no-current-user');
+    }
+
+    final lastSignIn = user.metadata.lastSignInTime;
+    if (lastSignIn != null &&
+        DateTime.now().difference(lastSignIn) < const Duration(minutes: 4)) {
+      return;
+    }
+
+    if (kIsWeb) {
+      await user.reauthenticateWithPopup(GoogleAuthProvider());
+    } else {
+      final idToken = await _googleIdToken();
+      await user.reauthenticateWithCredential(
+        GoogleAuthProvider.credential(idToken: idToken),
+      );
+    }
+  }
+
+  /// Supprime le compte Firebase de l'utilisateur connecté. Les données
+  /// doivent l'avoir été avant : une fois le compte supprimé, les règles de
+  /// sécurité ne reconnaissent plus personne pour les effacer.
+  static Future<void> deleteCurrentUser() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+    await user.delete();
+
+    // Sur mobile, oublier aussi le compte Google choisi : la prochaine
+    // connexion reproposera le choix du compte.
+    if (!kIsWeb) {
+      try {
+        await GoogleSignIn.instance.signOut();
+      } catch (e) {
+        debugPrint('[AOI] Déconnexion Google non effectuée : $e');
+      }
+    }
+  }
 
   // --- Web ---
 
@@ -57,6 +105,20 @@ class AuthService {
   static bool _googleSignInReady = false;
 
   static Future<void> _signInOnMobile() async {
+    final idToken = await _googleIdToken();
+
+    // Firebase se contente de l'idToken : pas besoin de demander en plus un
+    // jeton d'accès, ce qui déclencherait une autorisation supplémentaire.
+    await FirebaseAuth.instance.signInWithCredential(
+      GoogleAuthProvider.credential(idToken: idToken),
+    );
+  }
+
+  /// Ouvre le choix du compte Google et rend son jeton d'identité.
+  ///
+  /// Une annulation par l'utilisateur devient une erreur Firebase
+  /// `user-cancelled`, que les écrans savent distinguer d'une vraie panne.
+  static Future<String> _googleIdToken() async {
     if (!_googleSignInReady) {
       // Sur Android, l'identifiant du client Android est lu depuis
       // google-services.json ; `serverClientId` désigne le client web, seul
@@ -67,20 +129,23 @@ class AuthService {
       _googleSignInReady = true;
     }
 
-    final account = await GoogleSignIn.instance.authenticate();
-    final idToken = account.authentication.idToken;
+    final GoogleSignInAccount account;
+    try {
+      account = await GoogleSignIn.instance.authenticate();
+    } on GoogleSignInException catch (e) {
+      if (e.code == GoogleSignInExceptionCode.canceled) {
+        throw FirebaseAuthException(code: 'user-cancelled');
+      }
+      rethrow;
+    }
 
+    final idToken = account.authentication.idToken;
     if (idToken == null) {
       throw FirebaseAuthException(
         code: 'missing-id-token',
         message: "Google n'a pas fourni de jeton d'identité.",
       );
     }
-
-    // Firebase se contente de l'idToken : pas besoin de demander en plus un
-    // jeton d'accès, ce qui déclencherait une autorisation supplémentaire.
-    await FirebaseAuth.instance.signInWithCredential(
-      GoogleAuthProvider.credential(idToken: idToken),
-    );
+    return idToken;
   }
 }
