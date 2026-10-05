@@ -5,6 +5,7 @@ import '../models/plant.dart';
 import '../models/pond.dart';
 import 'fish_group_service.dart';
 import 'koi_service.dart';
+import 'photo_store.dart';
 import 'plant_service.dart';
 import 'pond_service.dart';
 
@@ -51,5 +52,9 @@ class AccountService {
       }
       await batch.commit();
     }
+
+    // Les fiches sont parties avec leurs photos ; restent d'éventuelles
+    // orphelines, laissées par un envoi interrompu.
+    await PhotoStore.deleteAllOf(userId);
   }
 }

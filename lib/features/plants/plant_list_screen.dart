@@ -6,6 +6,7 @@ import '../../services/plant_service.dart';
 import '../../theme/app_palette.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/app_widgets.dart';
+import '../../widgets/photo_image.dart';
 
 /// Les plantes du bassin, regroupées par zone de plantation, de la berge
 /// vers le fond : c'est ainsi qu'on parcourt un bassin du regard.
@@ -159,8 +160,8 @@ class _PlantTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppRadius.field),
             ),
             child: plant.imageUrl != null
-                ? Image.network(
-                    plant.imageUrl!,
+                ? Image(
+                    image: photoImage(plant.imageUrl!),
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => Icon(
                       Icons.grass_rounded,

@@ -13,6 +13,7 @@ import 'widgets/koi_growth_section.dart';
 import 'widgets/koi_hero_header.dart';
 import 'widgets/koi_identity_card.dart';
 import 'widgets/koi_photo_gallery.dart';
+import '../../services/photo_store.dart';
 
 /// La fiche d'un koï. Elle orchestre ; chaque section vit dans son widget.
 class KoiDetailScreen extends StatelessWidget {
@@ -172,7 +173,9 @@ class KoiDetailScreen extends StatelessWidget {
   Future<void> _addPhoto(BuildContext context, Koi koi) async {
     final XFile? pickedFile = await ImagePicker().pickImage(
       source: ImageSource.gallery,
-      imageQuality: 70,
+      maxWidth: PhotoStore.maxSide.toDouble(),
+      maxHeight: PhotoStore.maxSide.toDouble(),
+      imageQuality: PhotoStore.pickQuality,
     );
     if (pickedFile == null || !context.mounted) return;
 
@@ -203,7 +206,7 @@ class KoiDetailScreen extends StatelessWidget {
         const SnackBar(content: Text("Photo ajoutée à la galerie.")),
       );
     } catch (e) {
-      debugPrint("[AOI] Erreur Firebase Storage : $e");
+      debugPrint("[AOI] Photo non enregistrée : $e");
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
         SnackBar(content: Text("Erreur lors du transfert : $e")),

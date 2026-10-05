@@ -70,7 +70,8 @@ ponds/default_{uid}   userId, name, volumeLiters, depthCm, imageUrl, notes
 kois/{id}             userId, pondId?, name, variety, size, birthDate, sex,
                       status, breeder, origin, notes, imageUrl, généalogie
   └ growth/{id}       size, timestamp
-  └ photos/{id}       url, storagePath, takenAt
+  └ photos/{id}       url (référence photo:{id}), takenAt
+photos/{id}           userId, data (JPEG ≤ 900 Ko), createdAt
 plants/{id}           userId, pondId?, name, species, zone, isFloating,
                       isOxygenating, quantity, plantedAt, imageUrl, notes
 fish_groups/{id}      userId, pondId?, species, count, introducedAt,
@@ -83,8 +84,14 @@ Le bassin par défaut a un identifiant déterministe et se crée tout seul à la
 première connexion. `pondId` absent signifie « le bassin par défaut » : les
 documents antérieurs n'ont pas eu à être réécrits.
 
-Storage : `kois_photos/{uid}/{koiId}/{photoId}.jpg` pour les galeries,
-`user_media/{uid}/**` pour le reste.
+Les photos sont des documents `photos/{id}` : Cloud Storage exige la formule
+Blaze (payante à l'usage) depuis février 2026, Firestore reste gratuit
+jusqu'à 1 Gio. Chaque photo est compressée en JPEG sous 900 Ko (1 600 px de
+côté au plus) et les fiches y renvoient par `imageUrl: "photo:{id}"`.
+`StoredPhotoImage` les affiche comme n'importe quelle image, cache compris.
+Passer un jour à Blaze ne demande aucun changement ; seules les anciennes
+photos restées dans Storage (`kois_photos/…`, `user_media/…`) redeviendraient
+lisibles.
 
 ### Champ `age` (obsolète)
 

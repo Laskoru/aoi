@@ -4,6 +4,7 @@ import '../models/koi.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_widgets.dart';
+import 'photo_image.dart';
 
 /// Vignette d'un koï dans une grille : sa photo en fond, ses repères
 /// par-dessus. Le tap ouvre la fiche, avec la carte en transition partagée.
@@ -51,8 +52,8 @@ class KoiCard extends StatelessWidget {
               fit: StackFit.expand,
               children: [
                 if (hasImage)
-                  Image.network(
-                    koi.imageUrl!,
+                  Image(
+                    image: photoImage(koi.imageUrl!),
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) =>
                         _placeholder(context),

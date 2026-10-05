@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../models/koi.dart';
 import '../../../theme/app_palette.dart';
 import '../../../theme/app_widgets.dart';
+import '../../../widgets/photo_image.dart';
 
 /// En-tête de la fiche : la photo principale sur le dégradé d'eau, le nom,
 /// la variété, et les repères en pastilles.
@@ -52,7 +53,7 @@ class KoiHeroHeader extends StatelessWidget {
                           radius: 46,
                           backgroundColor: Colors.white.withValues(alpha: 0.15),
                           backgroundImage: koi.imageUrl != null
-                              ? NetworkImage(koi.imageUrl!)
+                              ? photoImage(koi.imageUrl!)
                               : null,
                           child: koi.imageUrl == null
                               ? const KoiEmblem(size: 60, color: Colors.white)

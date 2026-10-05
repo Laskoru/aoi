@@ -1,7 +1,7 @@
-import 'package:flutter/foundation.dart' show Uint8List, debugPrint;
+import 'package:flutter/foundation.dart' show Uint8List;
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import '../models/koi.dart';
+import 'photo_store.dart';
 
 /// Écritures sur la collection des koï qui touchent à plusieurs endroits à la
 /// fois, et qu'on ne veut pas voir dupliquées d'un écran à l'autre.
@@ -87,20 +87,10 @@ class KoiService {
   /// La première photo devient d'office la principale : sans cela, un koï
   /// resterait sans vignette alors qu'une photo existe.
   static Future<void> addPhoto(Koi koi, Uint8List bytes) async {
-    final photoRef = _collection.doc(koi.id).collection('photos').doc();
-    final storagePath =
-        'kois_photos/${koi.userId}/${koi.id}/${photoRef.id}.jpg';
+    final url = await PhotoStore.save(koi.userId, bytes);
 
-    final storageRef = FirebaseStorage.instance.ref(storagePath);
-    await storageRef.putData(
-      bytes,
-      SettableMetadata(contentType: 'image/jpeg'),
-    );
-    final url = await storageRef.getDownloadURL();
-
-    await photoRef.set({
+    await _collection.doc(koi.id).collection('photos').add({
       'url': url,
-      'storagePath': storagePath,
       'takenAt': FieldValue.serverTimestamp(),
     });
 
@@ -120,7 +110,7 @@ class KoiService {
   /// revient à sa vignette par défaut.
   static Future<void> deletePhoto(Koi koi, KoiPhoto photo) async {
     await _collection.doc(koi.id).collection('photos').doc(photo.id).delete();
-    await _deleteFromStorage(photo.storagePath);
+    await PhotoStore.delete(photo.url);
 
     if (koi.imageUrl != photo.url) return;
 
@@ -136,17 +126,6 @@ class KoiService {
           ? null
           : remaining.docs.first.data()['url'],
     });
-  }
-
-  /// La suppression d'un fichier est secondaire : son absence ne doit jamais
-  /// faire échouer l'opération métier déjà effectuée.
-  static Future<void> _deleteFromStorage(String path) async {
-    if (path.isEmpty) return;
-    try {
-      await FirebaseStorage.instance.ref(path).delete();
-    } catch (e) {
-      debugPrint('[AOI] Fichier non supprimé ($path) : $e');
-    }
   }
 
   /// Supprime une fiche, son historique de croissance, sa galerie et sa photo.
@@ -174,11 +153,17 @@ class KoiService {
     batch.delete(doc);
     await batch.commit();
 
-    for (final photo in photos.docs) {
-      await _deleteFromStorage(photo.data()['storagePath'] as String? ?? '');
+    final galleryUrls = [
+      for (final photo in photos.docs) photo.data()['url'] as String?,
+    ];
+    for (final url in galleryUrls) {
+      await PhotoStore.delete(url);
     }
 
-    // Photo unique des versions antérieures à la galerie.
-    await _deleteFromStorage('kois_photos/${koi.userId}/${koi.id}.jpg');
+    // Photo unique des versions antérieures à la galerie : principale sans
+    // figurer dans la galerie.
+    if (!galleryUrls.contains(koi.imageUrl)) {
+      await PhotoStore.delete(koi.imageUrl);
+    }
   }
 }

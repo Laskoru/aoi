@@ -8,6 +8,8 @@ import '../../services/plant_service.dart';
 import '../../theme/app_palette.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/app_widgets.dart';
+import '../../services/photo_store.dart';
+import '../../widgets/photo_image.dart';
 
 /// La fiche d'une plante.
 class PlantDetailScreen extends StatelessWidget {
@@ -160,7 +162,9 @@ class _Header extends StatelessWidget {
   Future<void> _pickPhoto(BuildContext context) async {
     final XFile? picked = await ImagePicker().pickImage(
       source: ImageSource.gallery,
-      imageQuality: 70,
+      maxWidth: PhotoStore.maxSide.toDouble(),
+      maxHeight: PhotoStore.maxSide.toDouble(),
+      imageQuality: PhotoStore.pickQuality,
     );
     if (picked == null || !context.mounted) return;
     final messenger = ScaffoldMessenger.of(context);
@@ -206,7 +210,7 @@ class _Header extends StatelessWidget {
                       radius: 46,
                       backgroundColor: Colors.white.withValues(alpha: 0.15),
                       backgroundImage: plant.imageUrl != null
-                          ? NetworkImage(plant.imageUrl!)
+                          ? photoImage(plant.imageUrl!)
                           : null,
                       child: plant.imageUrl == null
                           ? const Icon(

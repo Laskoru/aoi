@@ -94,10 +94,13 @@ service cloud.firestore {
               && get(/databases/$(database)/documents/kois/$(koiId)).data.userId == request.auth.uid;
         }
 
+        // url est une référence photo:{id} ; storagePath n'existe que sur les
+        // photos d'avant le passage à Firestore.
         allow read:   if ownsParentKoi();
         allow create: if ownsParentKoi()
                       && request.resource.data.url is string
-                      && request.resource.data.storagePath is string;
+                      && (!('storagePath' in request.resource.data)
+                          || request.resource.data.storagePath is string);
         allow update, delete: if ownsParentKoi();
       }
     }
@@ -128,6 +131,22 @@ service cloud.firestore {
       allow create: if ownsIncoming() && wellFormedPond()
                     && (!pondId.matches('default_.*') || pondId == 'default_' + request.auth.uid);
       allow update: if ownsExisting() && ownsIncoming() && ownerUnchanged() && wellFormedPond();
+      allow delete: if ownsExisting();
+    }
+
+    // --- Photos ---
+    //
+    // Les images elles-mêmes, en JPEG : Cloud Storage exige la formule Blaze
+    // depuis février 2026, Firestore reste gratuit jusqu'à 1 Gio. Les fiches
+    // y renvoient par une référence photo:{id}. Une photo ne change jamais :
+    // on en enregistre une nouvelle et on supprime l'ancienne.
+
+    match /photos/{photoId} {
+      allow read:   if ownsExisting();
+      allow create: if ownsIncoming()
+                    && request.resource.data.data is bytes
+                    && request.resource.data.data.size() <= 900 * 1024;
+      allow update: if false;
       allow delete: if ownsExisting();
     }
 

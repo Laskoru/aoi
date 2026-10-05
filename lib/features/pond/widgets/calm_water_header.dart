@@ -3,6 +3,7 @@ import 'package:flutter/scheduler.dart';
 import '../../../theme/app_palette.dart';
 import '../../../theme/app_theme.dart';
 import '../scene/water_layer.dart';
+import '../../../widgets/photo_image.dart';
 
 /// Fond d'en-tête : une eau presque immobile.
 ///
@@ -113,8 +114,8 @@ class _CalmWaterHeaderState extends State<CalmWaterHeader>
               ),
             ),
             if (widget.imageUrl != null) ...[
-              Image.network(
-                widget.imageUrl!,
+              Image(
+                image: photoImage(widget.imageUrl!),
                 fit: BoxFit.cover,
                 // Si la photo ne charge pas, l'eau reste dessous.
                 errorBuilder: (context, error, stackTrace) =>

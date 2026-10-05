@@ -4,6 +4,7 @@ import '../../../services/koi_service.dart';
 import '../../../theme/app_palette.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/app_widgets.dart';
+import '../../../widgets/photo_image.dart';
 
 /// Bande de photos d'un koï.
 ///
@@ -124,8 +125,8 @@ class _PhotoTile extends StatelessWidget {
           child: Stack(
             fit: StackFit.expand,
             children: [
-              Image.network(
-                photo.url,
+              Image(
+                image: photoImage(photo.url),
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => ColoredBox(
                   color: context.colors.surfaceContainerHigh,
@@ -183,7 +184,7 @@ class _PhotoViewer extends StatelessWidget {
           Positioned.fill(
             child: InteractiveViewer(
               maxScale: 4,
-              child: Center(child: Image.network(photo.url)),
+              child: Center(child: Image(image: photoImage(photo.url))),
             ),
           ),
           SafeArea(

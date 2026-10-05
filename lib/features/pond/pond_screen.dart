@@ -191,6 +191,7 @@ class _PondMenu extends StatelessWidget {
       source: ImageSource.gallery,
       imageQuality: 75,
       maxWidth: 2000,
+      maxHeight: 2000,
     );
     if (picked == null || !context.mounted) return;
 

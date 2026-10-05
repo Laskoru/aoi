@@ -6,6 +6,7 @@ import '../../../services/fish_group_service.dart';
 import '../../../theme/app_palette.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/app_widgets.dart';
+import '../../../widgets/photo_image.dart';
 
 /// Les autres habitants du bassin, par espèce et effectif.
 class FishGroupsSection extends StatelessWidget {
@@ -96,8 +97,8 @@ class _GroupTile extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppRadius.chip),
             ),
             child: group.imageUrl != null
-                ? Image.network(
-                    group.imageUrl!,
+                ? Image(
+                    image: photoImage(group.imageUrl!),
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) =>
                         Icon(Icons.groups_rounded, color: colors.onPrimaryContainer),

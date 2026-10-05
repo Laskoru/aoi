@@ -234,17 +234,15 @@ class Koi {
 /// clichés vaut mieux qu'écraser la seule photo à chaque envoi.
 class KoiPhoto {
   final String id;
-  final String url;
 
-  /// Chemin dans Cloud Storage, conservé pour pouvoir supprimer le fichier :
-  /// l'URL de téléchargement seule ne permet pas de le retrouver.
-  final String storagePath;
+  /// Référence `photo:{id}` vers le document Firestore qui porte l'image, ou
+  /// adresse Cloud Storage d'une photo plus ancienne.
+  final String url;
   final DateTime? takenAt;
 
   const KoiPhoto({
     required this.id,
     required this.url,
-    required this.storagePath,
     this.takenAt,
   });
 
@@ -253,7 +251,6 @@ class KoiPhoto {
     return KoiPhoto(
       id: doc.id,
       url: data['url'] as String? ?? '',
-      storagePath: data['storagePath'] as String? ?? '',
       takenAt: (data['takenAt'] as Timestamp?)?.toDate(),
     );
   }
