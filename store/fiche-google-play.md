@@ -73,7 +73,7 @@ Thème clair et sombre, et réduction des animations pour qui la préfère.
 |---|---|
 | Règles de confidentialité | `https://aoi-koi.web.app/confidentialite.html` |
 | Suppression de compte | `https://aoi-koi.web.app/suppression-compte.html` |
-| E-mail de contact | à choisir — il est affiché publiquement |
+| E-mail de contact | `hugob.web@gmail.com` (affiché publiquement) |
 | Site web | l'un de tes sites |
 | Catégorie | Style de vie |
 
