@@ -28,8 +28,8 @@ HI = (240, 113, 74)
 LEGENDES = [
     ("Votre bassin", "d'un coup d'œil"),
     ("Chaque koï", "sa fiche, sa lignée, sa croissance"),
-    ("La qualité de l'eau", "relevé après relevé"),
     ("Vos plantes", "rangées par zone"),
+    ("La qualité de l'eau", "relevé après relevé"),
     ("Toute votre collection", "en photos"),
     ("Les autres habitants", "du bassin"),
     ("Votre carnet", "en clair comme en sombre"),
@@ -106,8 +106,10 @@ def main(src, dst):
         sys.exit(f"Aucune capture dans {src}")
     for i, shot in enumerate(shots[: len(LEGENDES)]):
         title, subtitle = LEGENDES[i]
-        out = dst / f"{i + 1:02d}-{shot.stem}.png"
-        compose(shot, title, subtitle).save(out, optimize=True)
+        # JPEG sans sous-échantillonnage des couleurs : le texte de l'interface
+        # reste net, pour un fichier quatre fois plus léger qu'en PNG.
+        out = dst / f"{i + 1:02d}-{shot.stem}.jpg"
+        compose(shot, title, subtitle).save(out, quality=93, subsampling=0, optimize=True)
         print(out, Image.open(shot).size, "->", (W, H))
 
 
