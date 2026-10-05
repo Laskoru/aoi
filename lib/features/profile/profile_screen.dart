@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
@@ -9,6 +10,7 @@ import '../../theme/app_palette.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/app_widgets.dart';
 import 'delete_account_flow.dart';
+import 'demo_data.dart';
 
 /// Compte, affichage et bassin. La déconnexion est reléguée tout en bas,
 /// isolée : une action destructrice ne se mélange pas à la navigation.
@@ -82,6 +84,12 @@ class ProfileScreen extends StatelessWidget {
           const SectionHeader(title: "Mon bassin", icon: Icons.water_rounded),
           const SizedBox(height: AppSpacing.md),
           if (user != null) _buildPond(context, user.uid),
+
+          // Outil de développement : jamais compilé dans la version du store.
+          if (kDebugMode && user != null) ...[
+            const SizedBox(height: AppSpacing.lg),
+            _DemoDataCard(uid: user.uid),
+          ],
 
           const SizedBox(height: AppSpacing.xl),
           OutlinedButton.icon(
@@ -205,6 +213,72 @@ class ProfileScreen extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+}
+
+/// Remplit ou vide le compte avec des données de démonstration. Visible
+/// seulement en mode développement.
+class _DemoDataCard extends StatefulWidget {
+  final String uid;
+
+  const _DemoDataCard({required this.uid});
+
+  @override
+  State<_DemoDataCard> createState() => _DemoDataCardState();
+}
+
+class _DemoDataCardState extends State<_DemoDataCard> {
+  bool _busy = false;
+
+  Future<void> _run(Future<void> Function(String) action, String done) async {
+    setState(() => _busy = true);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await action(widget.uid);
+      messenger.showSnackBar(SnackBar(content: Text(done)));
+    } catch (e) {
+      messenger.showSnackBar(SnackBar(content: Text("Échec : $e")));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text("Données de démonstration", style: context.texts.titleMedium),
+          const SizedBox(height: 2),
+          Text(
+            "Mode développement uniquement. Les données ajoutées sont marquées "
+            "et se retirent sans toucher aux vraies fiches.",
+            style: context.texts.bodyMedium,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          if (_busy)
+            const Center(child: CircularProgressIndicator())
+          else
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
+              children: [
+                FilledButton.tonalIcon(
+                  onPressed: () => _run(DemoData.seed, "Données de démonstration ajoutées."),
+                  icon: const Icon(Icons.auto_awesome_rounded, size: 18),
+                  label: const Text("Ajouter"),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () => _run(DemoData.clear, "Données de démonstration retirées."),
+                  icon: const Icon(Icons.delete_sweep_rounded, size: 18),
+                  label: const Text("Retirer"),
+                ),
+              ],
+            ),
+        ],
+      ),
     );
   }
 }
