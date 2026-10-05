@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'app_palette.dart';
 import 'app_theme.dart';
+import 'koi_mark.dart';
 
 /// Surface surélevée standard : c'est la brique de base de toute l'interface.
 class AppCard extends StatelessWidget {
@@ -349,13 +350,15 @@ class LabelledRow extends StatelessWidget {
   }
 }
 
-/// Emblème de l'application : une goutte d'eau marquée d'une tache `hi`,
-/// comme la plaque rouge d'un kohaku.
+/// Emblème de l'application : le koï kohaku de l'icône, vu d'en haut.
 ///
-/// Il sert à la fois de logo sur l'écran de connexion et de vignette pour les
-/// koï sans photo. Material n'offre aucune icône de poisson convaincante — la
-/// seule approchante représente un poisson servi dans une assiette, ce qui
-/// tombe assez mal dans une application d'élevage.
+/// Il sert de logo sur l'écran de connexion, d'icône à l'onglet Koï et de
+/// vignette pour les koï sans photo. Material n'offre aucune icône de poisson
+/// convaincante — la seule approchante représente un poisson servi dans une
+/// assiette, ce qui tombe assez mal dans une application d'élevage.
+///
+/// Le corps prend [color] ; les plaques `hi` gardent leur rouge, avec la même
+/// transparence que le corps.
 class KoiEmblem extends StatelessWidget {
   final double size;
   final Color? color;
@@ -364,30 +367,70 @@ class KoiEmblem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final base = color ?? context.colors.primary;
-
-    return SizedBox(
-      width: size,
-      height: size,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Icon(Icons.water_drop_rounded, size: size, color: base),
-          Positioned(
-            top: size * 0.34,
-            child: Container(
-              width: size * 0.22,
-              height: size * 0.22,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: context.isDark ? AppPalette.hiBright : AppPalette.hi,
-              ),
-            ),
-          ),
-        ],
+    return SizedBox.square(
+      dimension: size,
+      child: CustomPaint(
+        painter: _KoiMarkPainter(
+          body: color ?? context.colors.primary,
+          hi: context.isDark ? AppPalette.hiBright : AppPalette.hi,
+        ),
       ),
     );
   }
+}
+
+class _KoiMarkPainter extends CustomPainter {
+  final Color body;
+  final Color hi;
+
+  const _KoiMarkPainter({required this.body, required this.hi});
+
+  static Path _polygon(List<Offset> points) => Path()..addPolygon(points, true);
+
+  static final _bodyPath = _polygon(KoiMarkShape.body);
+  static final _fins = [
+    _polygon(KoiMarkShape.leftFin),
+    _polygon(KoiMarkShape.rightFin),
+    _polygon(KoiMarkShape.tail),
+  ];
+  static final _patches = KoiMarkShape.patches.fold(
+    Path(),
+    (path, rect) => path..addOval(rect),
+  );
+
+  /// Le poisson occupe 92 % de la hauteur, comme le dessin d'une icône
+  /// Material dans sa boîte.
+  static const _fill = 0.92;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final side = size.shortestSide * _fill;
+    // Nageoires et corps se chevauchent : peints opaques dans un calque puis
+    // fondus d'un bloc, sinon les recouvrements ressortiraient plus foncés.
+    final translucent = body.a < 1;
+    if (translucent) {
+      canvas.saveLayer(
+        Offset.zero & size,
+        Paint()..color = Colors.black.withValues(alpha: body.a),
+      );
+    } else {
+      canvas.save();
+    }
+    canvas.translate((size.width - side) / 2, (size.height - side) / 2);
+    canvas.scale(side);
+
+    final paint = Paint()..color = body.withValues(alpha: 1);
+    for (final fin in _fins) {
+      canvas.drawPath(fin, paint);
+    }
+    canvas.drawPath(_bodyPath, paint);
+    canvas.clipPath(_bodyPath);
+    canvas.drawPath(_patches, Paint()..color = hi);
+    canvas.restore();
+  }
+
+  @override
+  bool shouldRepaint(_KoiMarkPainter old) => old.body != body || old.hi != hi;
 }
 
 /// Dégradé d'eau utilisé par les en-têtes : on plonge du bord vers le fond.

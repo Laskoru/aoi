@@ -231,12 +231,12 @@ class _DemoDataCard extends StatefulWidget {
 class _DemoDataCardState extends State<_DemoDataCard> {
   bool _busy = false;
 
-  Future<void> _run(Future<void> Function(String) action, String done) async {
+  Future<void> _run(Future<String> Function(String uid) action) async {
     setState(() => _busy = true);
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await action(widget.uid);
-      messenger.showSnackBar(SnackBar(content: Text(done)));
+      final message = await action(widget.uid);
+      messenger.showSnackBar(SnackBar(content: Text(message)));
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text("Échec : $e")));
     } finally {
@@ -253,8 +253,10 @@ class _DemoDataCardState extends State<_DemoDataCard> {
           Text("Données de démonstration", style: context.texts.titleMedium),
           const SizedBox(height: 2),
           Text(
-            "Mode développement uniquement. Les données ajoutées sont marquées "
-            "et se retirent sans toucher aux vraies fiches.",
+            "Mode développement uniquement. Les données ajoutées sont marquées, "
+            "remplacées à chaque ajout, et se retirent sans toucher aux vraies "
+            "fiches. L'ajout prend une trentaine de secondes : les photos "
+            "(Unsplash) sont téléchargées puis envoyées dans votre espace.",
             style: context.texts.bodyMedium,
           ),
           const SizedBox(height: AppSpacing.md),
@@ -266,12 +268,12 @@ class _DemoDataCardState extends State<_DemoDataCard> {
               runSpacing: AppSpacing.sm,
               children: [
                 FilledButton.tonalIcon(
-                  onPressed: () => _run(DemoData.seed, "Données de démonstration ajoutées."),
+                  onPressed: () => _run(DemoData.seed),
                   icon: const Icon(Icons.auto_awesome_rounded, size: 18),
                   label: const Text("Ajouter"),
                 ),
                 OutlinedButton.icon(
-                  onPressed: () => _run(DemoData.clear, "Données de démonstration retirées."),
+                  onPressed: () => _run(DemoData.clear),
                   icon: const Icon(Icons.delete_sweep_rounded, size: 18),
                   label: const Text("Retirer"),
                 ),

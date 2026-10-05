@@ -122,6 +122,30 @@ dans `lib/theme/`. Aucun écran ne contient de couleur littérale : on lit le
 thème via `context.colors`, `context.texts` et `context.pond`. L'application
 suit le réglage clair/sombre du téléphone, ou celui choisi dans le profil.
 
+## Icône
+
+Un koï kohaku à plat, vu d'en haut. Les sources sont dans `assets/icon/` :
+`icon.png` (iOS, web, fiche Play), `foreground.png` et `monochrome.png`
+(icône adaptative d'Android, déjà dessinée dans la zone sûre, d'où
+`adaptive_icon_foreground_inset: 0`). Après une modification :
+
+```bash
+dart run flutter_launcher_icons
+git checkout web/manifest.json   # l'outil l'écrase avec ses valeurs anglaises
+```
+
+Le même tracé, exporté dans `lib/theme/koi_mark.dart`, dessine `KoiEmblem`
+dans l'appli : connexion, onglet Koï, vignettes sans photo.
+
+## Données de démonstration
+
+En mode debug seulement : Profil → Données de démonstration → Ajouter. Huit
+koï avec photos, croissance et filiation, cinq semaines de relevés d'eau, des
+plantes dans chaque zone, trois groupes d'autres poissons et une photo du
+bassin s'il n'en a pas. Tout porte `demo: true` ; « Retirer » n'efface que
+cela. Les photos viennent d'Unsplash (licence libre, auteurs cités dans
+`lib/features/profile/demo_data.dart`).
+
 ## Tester sur iPhone via la PWA
 
 Aucun Mac n'est nécessaire : on publie la version web et on l'ajoute à

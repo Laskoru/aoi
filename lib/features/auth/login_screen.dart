@@ -147,8 +147,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  /// Un disque clair traversé d'une tache `hi` : la marque de l'appli, reprise
-  /// de la plaque rouge d'un kohaku.
+  /// Un disque clair autour du koï kohaku de l'icône : la marque de l'appli.
   Widget _buildEmblem() {
     return Container(
       width: 96,
@@ -158,7 +157,7 @@ class _LoginScreenState extends State<LoginScreen> {
         color: Colors.white.withValues(alpha: 0.12),
         border: Border.all(color: Colors.white.withValues(alpha: 0.25), width: 2),
       ),
-      child: const Center(child: KoiEmblem(size: 50, color: Colors.white)),
+      child: const Center(child: KoiEmblem(size: 64, color: Colors.white)),
     );
   }
 

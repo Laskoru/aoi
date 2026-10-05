@@ -55,7 +55,7 @@ class KoiHeroHeader extends StatelessWidget {
                               ? NetworkImage(koi.imageUrl!)
                               : null,
                           child: koi.imageUrl == null
-                              ? const KoiEmblem(size: 46, color: Colors.white)
+                              ? const KoiEmblem(size: 60, color: Colors.white)
                               : null,
                         ),
                       ),

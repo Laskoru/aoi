@@ -177,7 +177,7 @@ class KoiCard extends StatelessWidget {
       ),
       child: Center(
         child: KoiEmblem(
-          size: 46,
+          size: 56,
           color: colors.primary.withValues(alpha: 0.35),
         ),
       ),
