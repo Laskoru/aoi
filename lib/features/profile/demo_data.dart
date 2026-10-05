@@ -212,7 +212,7 @@ class DemoData {
 
     // Les photos en dernier, toutes à la fois : chaque fiche existe déjà, et
     // une photo qui échoue n'empêche pas les autres.
-    final uploads = <Future<bool>>[
+    final uploads = <Future<String?>>[
       for (final (ref, koi) in entries)
         if (_koiPhotos[koi.name] case final url?)
           _addPhoto(url, (bytes) => KoiService.addPhoto(Koi.fromMap(ref.id, koi.toMap()), bytes)),
@@ -244,11 +244,13 @@ class DemoData {
       }
     }
 
-    final failed = (await Future.wait(uploads)).where((ok) => !ok).length;
-    return failed == 0
-        ? "Données de démonstration ajoutées, photos comprises."
-        : "Données ajoutées, mais $failed photo(s) n'ont pas pu être "
-            "téléchargées. Vérifiez la connexion puis recommencez.";
+    final errors = (await Future.wait(uploads)).nonNulls.toList();
+    if (errors.isEmpty) {
+      return "Données de démonstration ajoutées, photos comprises.";
+    }
+    return "Données ajoutées, mais ${errors.length} photo(s) sur "
+        "${uploads.length} n'ont pas pu être ajoutées. Première cause, "
+        "${errors.first}";
   }
 
   /// Retire tout ce que [seed] a ajouté, et rien d'autre. Renvoie le message
@@ -292,21 +294,29 @@ class DemoData {
   }
 
   /// Télécharge une photo puis la confie à [upload]. Une photo manquante ne
-  /// bloque pas le reste : elle est seulement comptée.
-  static Future<bool> _addPhoto(
+  /// bloque pas le reste : la fonction rend la cause de l'échec, en
+  /// précisant l'étape, ou null si tout s'est bien passé.
+  static Future<String?> _addPhoto(
     String url,
     Future<void> Function(Uint8List bytes) upload,
   ) async {
+    final Uint8List bytes;
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode != 200) {
-        throw http.ClientException('HTTP ${response.statusCode}', Uri.parse(url));
+        return 'au téléchargement : HTTP ${response.statusCode}';
       }
-      await upload(response.bodyBytes);
-      return true;
+      bytes = response.bodyBytes;
     } catch (e) {
-      debugPrint('[AOI] Photo de démonstration non ajoutée ($url) : $e');
-      return false;
+      debugPrint('[AOI] Photo de démonstration non téléchargée ($url) : $e');
+      return 'au téléchargement : $e';
+    }
+    try {
+      await upload(bytes);
+      return null;
+    } catch (e) {
+      debugPrint('[AOI] Photo de démonstration non envoyée ($url) : $e');
+      return "à l'envoi : $e";
     }
   }
 

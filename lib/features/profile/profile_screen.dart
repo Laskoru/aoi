@@ -236,7 +236,15 @@ class _DemoDataCardState extends State<_DemoDataCard> {
     final messenger = ScaffoldMessenger.of(context);
     try {
       final message = await action(widget.uid);
-      messenger.showSnackBar(SnackBar(content: Text(message)));
+      // Le message peut porter la cause d'un échec : on laisse le temps de
+      // le lire.
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(message),
+          duration: const Duration(seconds: 12),
+          showCloseIcon: true,
+        ),
+      );
     } catch (e) {
       messenger.showSnackBar(SnackBar(content: Text("Échec : $e")));
     } finally {
