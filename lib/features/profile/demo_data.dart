@@ -254,6 +254,10 @@ class DemoData {
   /// Retire tout ce que [seed] a ajouté, et rien d'autre. Renvoie le message
   /// à afficher.
   static Future<String> clear(String uid) async {
+    // Le bassin est relu plus bas : il doit exister, sinon les règles
+    // refusent la lecture tant que leur version à jour n'est pas déployée.
+    await PondService.ensureDefault(uid);
+
     Query<Map<String, dynamic>> demo(String collection) => _db
         .collection(collection)
         .where('userId', isEqualTo: uid)

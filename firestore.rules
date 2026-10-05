@@ -117,8 +117,16 @@ service cloud.firestore {
             && (!('notes' in d) || d.notes == null || (d.notes is string && d.notes.size() <= 2000));
       }
 
-      allow read:   if ownsExisting();
-      allow create: if ownsIncoming() && wellFormedPond();
+      // Lire un bassin absent est permis : on n'y apprend rien, et l'appli
+      // doit pouvoir constater que le bassin par défaut n'existe pas encore
+      // avant de le créer. Sans cela, le flux du bassin échoue au lieu de
+      // renvoyer « pas encore créé ».
+      allow read:   if isSignedIn()
+                    && (resource == null || resource.data.userId == request.auth.uid);
+      // Le bassin par défaut porte l'identifiant de son propriétaire :
+      // personne d'autre ne peut le créer à sa place.
+      allow create: if ownsIncoming() && wellFormedPond()
+                    && (!pondId.matches('default_.*') || pondId == 'default_' + request.auth.uid);
       allow update: if ownsExisting() && ownsIncoming() && ownerUnchanged() && wellFormedPond();
       allow delete: if ownsExisting();
     }

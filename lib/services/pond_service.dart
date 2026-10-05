@@ -12,10 +12,19 @@ class PondService {
 
   /// Garantit l'existence du bassin par défaut sans jamais écraser ce que
   /// l'utilisateur y a déjà saisi : on ne crée que s'il n'existe pas.
+  ///
+  /// Les règles d'origine refusent de lire un bassin encore absent : elles
+  /// vérifient le propriétaire du document lu, et il n'y en a pas. La lecture
+  /// préalable échouait donc, et le bassin n'était jamais créé. Un refus à la
+  /// lecture vaut ici « absent » ; la création reste permise au seul
+  /// propriétaire.
   static Future<void> ensureDefault(String userId) async {
     final ref = _collection.doc(Pond.defaultIdFor(userId));
-    final snapshot = await ref.get();
-    if (snapshot.exists) return;
+    try {
+      if ((await ref.get()).exists) return;
+    } on FirebaseException catch (e) {
+      if (e.code != 'permission-denied') rethrow;
+    }
 
     await ref.set({
       'userId': userId,
@@ -24,9 +33,16 @@ class PondService {
     }, SetOptions(merge: true));
   }
 
-  /// Le bassin par défaut, en flux.
-  static Stream<Pond?> defaultOf(String userId) {
-    return _collection
+  /// Le bassin par défaut, en flux. Il est créé au besoin avant l'écoute :
+  /// la connexion le crée aussi, mais l'écran peut s'abonner avant, et un
+  /// abonnement refusé par les règles ne se rétablit pas de lui-même.
+  static Stream<Pond?> defaultOf(String userId) async* {
+    try {
+      await ensureDefault(userId);
+    } catch (e) {
+      debugPrint('[AOI] Bassin par défaut non vérifié : $e');
+    }
+    yield* _collection
         .doc(Pond.defaultIdFor(userId))
         .snapshots()
         .map((doc) => doc.exists ? Pond.fromFirestore(doc) : null);
