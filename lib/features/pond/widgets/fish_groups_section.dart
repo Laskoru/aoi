@@ -98,7 +98,7 @@ class _GroupTile extends StatelessWidget {
             ),
             child: group.imageUrl != null
                 ? Image(
-                    image: photoImage(group.imageUrl!),
+                    image: photoImage(group.imageUrl!, width: 200),
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) =>
                         Icon(Icons.groups_rounded, color: colors.onPrimaryContainer),

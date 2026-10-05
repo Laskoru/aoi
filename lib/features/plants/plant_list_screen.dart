@@ -161,7 +161,7 @@ class _PlantTile extends StatelessWidget {
             ),
             child: plant.imageUrl != null
                 ? Image(
-                    image: photoImage(plant.imageUrl!),
+                    image: photoImage(plant.imageUrl!, width: 200),
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => Icon(
                       Icons.grass_rounded,

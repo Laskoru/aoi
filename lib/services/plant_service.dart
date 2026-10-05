@@ -32,15 +32,24 @@ class PlantService {
     });
   }
 
+  /// Met à jour la fiche, sans toucher à sa photo : seul [setPhoto] la
+  /// change. Un formulaire ouvert avant l'envoi d'une photo remettrait sinon
+  /// l'ancienne, qui n'existe plus.
   static Future<void> update(Plant plant) {
-    return _collection.doc(plant.id).update(plant.toMap());
+    return _collection.doc(plant.id).update(plant.toMap()..remove('imageUrl'));
   }
 
   /// Remplace la photo de la plante. Une seule suffit : un pot de nénuphar
   /// ne change pas de motif d'une année sur l'autre.
+  ///
+  /// La photo et sa référence partent dans un seul lot ; l'ancienne n'est
+  /// effacée qu'une fois la nouvelle en place.
   static Future<void> setPhoto(Plant plant, Uint8List bytes) async {
-    final url = await PhotoStore.save(plant.userId, bytes);
-    await _collection.doc(plant.id).update({'imageUrl': url});
+    final photo = await PhotoStore.prepare(plant.userId, bytes);
+    final batch = FirebaseFirestore.instance.batch();
+    photo.addTo(batch);
+    batch.update(_collection.doc(plant.id), {'imageUrl': photo.ref});
+    await batch.commit();
     await PhotoStore.delete(plant.imageUrl);
   }
 

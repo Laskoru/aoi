@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../../models/plant.dart';
@@ -6,6 +7,7 @@ import '../../services/plant_service.dart';
 import '../../theme/app_palette.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/app_widgets.dart';
+import '../../services/pending_write.dart';
 
 /// Formulaire d'une plante, en création comme en modification.
 class PlantFormScreen extends StatefulWidget {
@@ -100,13 +102,18 @@ class _PlantFormScreenState extends State<PlantFormScreen> {
         notes: _trimmedOrNull(_notes),
       );
 
-      if (_isEditing) {
-        await PlantService.update(plant);
-      } else {
-        await PlantService.create(plant);
-      }
+      final confirmed = await (_isEditing
+              ? PlantService.update(plant)
+              : PlantService.create(plant))
+          .confirmedWithin();
       if (mounted) {
-        _snack(_isEditing ? 'Plante mise à jour.' : 'Plante ajoutée.');
+        _snack(
+          !confirmed
+              ? pendingWriteMessage
+              : _isEditing
+              ? 'Plante mise à jour.'
+              : 'Plante ajoutée.',
+        );
         Navigator.pop(context);
       }
     } catch (e) {
@@ -142,9 +149,9 @@ class _PlantFormScreenState extends State<PlantFormScreen> {
 
     setState(() => _saving = true);
     try {
-      await PlantService.delete(plant);
+      final confirmed = await PlantService.delete(plant).confirmedWithin();
       if (mounted) {
-        _snack('${plant.name} a été supprimée.');
+        _snack(confirmed ? '${plant.name} a été supprimée.' : pendingWriteMessage);
         // On quitte le formulaire, puis la fiche qui n'a plus rien à afficher.
         Navigator.pop(context);
         Navigator.pop(context);
@@ -192,6 +199,7 @@ class _PlantFormScreenState extends State<PlantFormScreen> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _name,
+              inputFormatters: [LengthLimitingTextInputFormatter(80)],
               textCapitalization: TextCapitalization.sentences,
               decoration: const InputDecoration(
                 labelText: 'Nom (ex : Nénuphar rose)',
@@ -204,6 +212,7 @@ class _PlantFormScreenState extends State<PlantFormScreen> {
             const SizedBox(height: 16),
             TextFormField(
               controller: _species,
+              inputFormatters: [LengthLimitingTextInputFormatter(120)],
               decoration: const InputDecoration(
                 labelText: 'Espèce ou variété (optionnel)',
                 prefixIcon: Icon(Icons.science_outlined, size: 20),
@@ -294,6 +303,7 @@ class _PlantFormScreenState extends State<PlantFormScreen> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _notes,
+              maxLength: 2000,
               maxLines: 3,
               decoration: const InputDecoration(
                 labelText: 'Division, engrais, hivernage…',

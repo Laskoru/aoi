@@ -26,25 +26,33 @@ class AccountService {
   /// ce qui reste.
   static Future<void> deleteAllData(String userId) async {
     final db = FirebaseFirestore.instance;
-    Query<Map<String, dynamic>> mine(String collection) =>
-        db.collection(collection).where('userId', isEqualTo: userId);
+    // Tout est lu sur le serveur : hors réseau, l'échec est immédiat. Le
+    // cache ne rendrait qu'une partie des données, et le reste survivrait au
+    // compte.
+    Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>> mine(
+      String collection,
+    ) async => (await db
+            .collection(collection)
+            .where('userId', isEqualTo: userId)
+            .get(const GetOptions(source: Source.server)))
+        .docs;
 
-    for (final doc in (await mine('kois').get()).docs) {
+    for (final doc in await mine('kois')) {
       await KoiService.delete(Koi.fromFirestore(doc));
     }
-    for (final doc in (await mine('plants').get()).docs) {
+    for (final doc in await mine('plants')) {
       await PlantService.delete(Plant.fromFirestore(doc));
     }
-    for (final doc in (await mine('fish_groups').get()).docs) {
+    for (final doc in await mine('fish_groups')) {
       await FishGroupService.delete(FishGroup.fromFirestore(doc));
     }
-    for (final doc in (await mine('ponds').get()).docs) {
+    for (final doc in await mine('ponds')) {
       await PondService.delete(Pond.fromFirestore(doc));
     }
 
     // Les relevés n'ont ni fichier ni sous-collection : suppression par lots,
     // Firestore plafonnant un lot à 500 écritures.
-    final measurements = (await mine('measurements').get()).docs;
+    final measurements = await mine('measurements');
     for (var start = 0; start < measurements.length; start += 400) {
       final batch = db.batch();
       for (final doc in measurements.skip(start).take(400)) {

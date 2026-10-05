@@ -5,6 +5,7 @@ import '../../services/measurement_service.dart';
 import '../../theme/app_palette.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/app_widgets.dart';
+import '../../services/pending_write.dart';
 
 class AddMeasurementScreen extends StatefulWidget {
   const AddMeasurementScreen({super.key});
@@ -55,7 +56,7 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await MeasurementService.create(
+      final confirmed = await MeasurementService.create(
         WaterMeasurement(
           id: '',
           userId: user.uid,
@@ -67,10 +68,10 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
           kh: _parse(_khController),
           gh: _parse(_ghController),
         ),
-      );
+      ).confirmedWithin();
 
       if (mounted) {
-        _showSnack('Mesure enregistrée !');
+        _showSnack(confirmed ? 'Mesure enregistrée !' : pendingWriteMessage);
         Navigator.pop(context);
       }
     } catch (e) {

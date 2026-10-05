@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/auth_service.dart';
 import '../../theme/app_palette.dart';
 import '../../theme/app_widgets.dart';
+import '../../widgets/privacy_policy_link.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -137,6 +138,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: AppSpacing.lg),
                       _buildErrorBanner(),
                     ],
+
+                    const SizedBox(height: AppSpacing.lg),
+                    PrivacyPolicyLink(
+                      color: Colors.white.withValues(alpha: 0.75),
+                    ),
                   ],
                 ),
               ),

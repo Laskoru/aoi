@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../../models/fish_group.dart';
@@ -6,6 +7,7 @@ import '../../services/fish_group_service.dart';
 import '../../theme/app_palette.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/app_widgets.dart';
+import '../../services/pending_write.dart';
 
 /// Formulaire d'un groupe de poissons, en création comme en modification.
 class FishGroupFormScreen extends StatefulWidget {
@@ -82,13 +84,18 @@ class _FishGroupFormScreenState extends State<FishGroupFormScreen> {
         notes: notes.isEmpty ? null : notes,
       );
 
-      if (_isEditing) {
-        await FishGroupService.update(group);
-      } else {
-        await FishGroupService.create(group);
-      }
+      final confirmed = await (_isEditing
+              ? FishGroupService.update(group)
+              : FishGroupService.create(group))
+          .confirmedWithin();
       if (mounted) {
-        _snack(_isEditing ? 'Groupe mis à jour.' : 'Groupe ajouté.');
+        _snack(
+          !confirmed
+              ? pendingWriteMessage
+              : _isEditing
+              ? 'Groupe mis à jour.'
+              : 'Groupe ajouté.',
+        );
         Navigator.pop(context);
       }
     } catch (e) {
@@ -124,9 +131,9 @@ class _FishGroupFormScreenState extends State<FishGroupFormScreen> {
 
     setState(() => _saving = true);
     try {
-      await FishGroupService.delete(group);
+      final confirmed = await FishGroupService.delete(group).confirmedWithin();
       if (mounted) {
-        _snack('Groupe supprimé.');
+        _snack(confirmed ? 'Groupe supprimé.' : pendingWriteMessage);
         Navigator.pop(context);
       }
     } catch (e) {
@@ -172,6 +179,7 @@ class _FishGroupFormScreenState extends State<FishGroupFormScreen> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _species,
+              inputFormatters: [LengthLimitingTextInputFormatter(80)],
               textCapitalization: TextCapitalization.sentences,
               decoration: const InputDecoration(
                 labelText: 'Espèce (ex : Ide mélanote, Esturgeon)',
@@ -237,6 +245,7 @@ class _FishGroupFormScreenState extends State<FishGroupFormScreen> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _notes,
+              maxLength: 2000,
               maxLines: 3,
               decoration: const InputDecoration(
                 labelText: 'Origine, comportement, pertes…',

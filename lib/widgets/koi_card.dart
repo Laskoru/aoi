@@ -53,7 +53,7 @@ class KoiCard extends StatelessWidget {
               children: [
                 if (hasImage)
                   Image(
-                    image: photoImage(koi.imageUrl!),
+                    image: photoImage(koi.imageUrl!, width: 600),
                     fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) =>
                         _placeholder(context),

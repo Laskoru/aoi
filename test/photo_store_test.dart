@@ -19,18 +19,31 @@ void main() {
       expect(PhotoStore.isStored(url), isFalse);
       expect(PhotoStore.isStored(null), isFalse);
       expect(photoImage(url), isA<NetworkImage>());
+      expect(photoImage(url, width: 200), isA<ResizeImage>());
     });
 
-    test('deux références à la même photo partagent le cache', () {
+    test('deux références à la même photo, à la même taille, partagent le cache', () {
       expect(photoImage('photo:abc'), const StoredPhotoImage('abc'));
+      expect(photoImage('photo:abc', width: 200), const StoredPhotoImage('abc', width: 200));
+      expect(photoImage('photo:abc', width: 200), isNot(const StoredPhotoImage('abc')));
       expect(photoImage('photo:abc'), isNot(const StoredPhotoImage('def')));
     });
   });
 
   group('compression', () {
-    test('un JPEG déjà léger passe tel quel', () async {
-      final jpeg = img.encodeJpg(img.Image(width: 400, height: 300));
-      expect(await PhotoStore.compress(jpeg), same(jpeg));
+    test('la position GPS et les autres métadonnées disparaissent', () async {
+      final source = img.Image(width: 400, height: 300);
+      source.exif.gpsIfd.gpsLatitude = 48.11;
+      source.exif.gpsIfd.gpsLongitude = -1.68;
+      source.exif.imageIfd.make = 'Téléphone';
+      final withExif = img.encodeJpg(source);
+      expect(img.decodeJpg(withExif)!.exif.isEmpty, isFalse);
+
+      final out = await PhotoStore.compress(withExif);
+
+      final decoded = img.decodeJpg(out)!;
+      expect(decoded.exif.isEmpty, isTrue);
+      expect((decoded.width, decoded.height), (400, 300));
     });
 
     test('une grande image est réduite et convertie en JPEG', () async {
@@ -49,6 +62,14 @@ void main() {
       final decoded = img.decodeJpg(out)!;
       expect(decoded.width, PhotoStore.maxSide);
       expect(decoded.height, closeTo(2000 * PhotoStore.maxSide / 3000, 1));
+    });
+
+    test('la photo du bassin garde une plus grande définition', () async {
+      final wide = img.encodeJpg(img.Image(width: 3000, height: 1500));
+
+      final out = await PhotoStore.compress(wide, maxSide: PhotoStore.pondMaxSide);
+
+      expect(img.decodeJpg(out)!.width, PhotoStore.pondMaxSide);
     });
 
     test("un fichier qui n'est pas une image est refusé", () {

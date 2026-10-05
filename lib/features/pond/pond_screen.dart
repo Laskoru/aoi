@@ -18,6 +18,7 @@ import '../../widgets/koi_card.dart';
 import '../../widgets/water_health_banner.dart';
 import 'widgets/calm_water_header.dart';
 import 'widgets/fish_groups_section.dart';
+import '../../services/pending_write.dart';
 
 /// L'accueil : un en-tête d'eau calme — ou la photo du bassin — avec son nom
 /// et l'état de l'eau, puis ce qu'on veut savoir en arrivant : les koï, en
@@ -199,10 +200,17 @@ class _PondMenu extends StatelessWidget {
     messenger.showSnackBar(const SnackBar(content: Text("Envoi de la photo…")));
     try {
       final Uint8List bytes = await picked.readAsBytes();
-      await PondService.setPhoto(pond, bytes);
+      final confirmed = await PondService.setPhoto(
+        pond,
+        bytes,
+      ).confirmedWithin(const Duration(seconds: 20));
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
-        const SnackBar(content: Text("Photo du bassin mise à jour.")),
+        SnackBar(
+          content: Text(
+            confirmed ? "Photo du bassin mise à jour." : pendingWriteMessage,
+          ),
+        ),
       );
     } catch (e) {
       messenger.hideCurrentSnackBar();
@@ -215,9 +223,13 @@ class _PondMenu extends StatelessWidget {
   Future<void> _removePhoto(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await PondService.removePhoto(pond);
+      final confirmed = await PondService.removePhoto(pond).confirmedWithin();
       messenger.showSnackBar(
-        const SnackBar(content: Text("Photo retirée : retour à l'eau.")),
+        SnackBar(
+          content: Text(
+            confirmed ? "Photo retirée : retour à l'eau." : pendingWriteMessage,
+          ),
+        ),
       );
     } catch (e) {
       messenger.showSnackBar(

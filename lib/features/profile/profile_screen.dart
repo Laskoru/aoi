@@ -9,6 +9,7 @@ import '../../services/pond_service.dart';
 import '../../theme/app_palette.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/app_widgets.dart';
+import '../../widgets/privacy_policy_link.dart';
 import 'delete_account_flow.dart';
 import 'demo_data.dart';
 
@@ -122,6 +123,7 @@ class ProfileScreen extends StatelessWidget {
               ),
             ),
           ),
+          const Center(child: PrivacyPolicyLink()),
           const SizedBox(height: AppSpacing.lg),
         ],
       ),

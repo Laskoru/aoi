@@ -25,6 +25,7 @@ dependencies:
   go_router: ^18.0.1          # Routes, deep links PWA, onglets à état préservé
   http: ^1.6.0                # Photos des données de démonstration (debug)
   image: ^4.5.0               # Recompression des photos trop lourdes pour Firestore
+  url_launcher: ^6.3.3
 dev_dependencies:
   flutter_test:
     sdk: flutter

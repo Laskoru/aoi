@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../models/pond.dart';
 import '../../services/pond_service.dart';
 import '../../theme/app_palette.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/app_widgets.dart';
+import '../../services/pending_write.dart';
 
 /// Nom, volume et profondeur du bassin.
 class PondFormScreen extends StatefulWidget {
@@ -53,7 +55,7 @@ class _PondFormScreenState extends State<PondFormScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _saving = true);
     try {
-      await PondService.update(
+      final confirmed = await PondService.update(
         Pond(
           id: widget.pond.id,
           userId: widget.pond.userId,
@@ -64,8 +66,15 @@ class _PondFormScreenState extends State<PondFormScreen> {
           notes: _notes.text.trim().isEmpty ? null : _notes.text.trim(),
           createdAt: widget.pond.createdAt,
         ),
-      );
-      if (mounted) Navigator.pop(context);
+      ).confirmedWithin();
+      if (mounted) {
+        if (!confirmed) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text(pendingWriteMessage)),
+          );
+        }
+        Navigator.pop(context);
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
@@ -107,6 +116,7 @@ class _PondFormScreenState extends State<PondFormScreen> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _name,
+              inputFormatters: [LengthLimitingTextInputFormatter(80)],
               textCapitalization: TextCapitalization.sentences,
               decoration: const InputDecoration(
                 labelText: 'Nom du bassin',
@@ -155,6 +165,7 @@ class _PondFormScreenState extends State<PondFormScreen> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _notes,
+              maxLength: 2000,
               maxLines: 3,
               decoration: const InputDecoration(
                 labelText: 'Filtration, exposition, historique…',

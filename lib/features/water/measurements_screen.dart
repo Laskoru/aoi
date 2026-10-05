@@ -9,6 +9,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/app_widgets.dart';
 import '../../theme/pond_status.dart';
 import '../../utils/water_logic.dart';
+import '../../services/pending_write.dart';
 
 /// Historique complet des relevés d'eau.
 ///
@@ -111,8 +112,14 @@ class _MeasurementTile extends StatelessWidget {
 
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await MeasurementService.delete(measurement.id);
-      messenger.showSnackBar(const SnackBar(content: Text('Relevé supprimé.')));
+      final confirmed = await MeasurementService.delete(
+        measurement.id,
+      ).confirmedWithin();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(confirmed ? 'Relevé supprimé.' : pendingWriteMessage),
+        ),
+      );
     } catch (e) {
       messenger.showSnackBar(
         SnackBar(content: Text('Suppression impossible : $e')),

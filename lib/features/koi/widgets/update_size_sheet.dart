@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../services/koi_service.dart';
 import '../../../theme/app_palette.dart';
 import '../../../theme/app_theme.dart';
+import '../../../services/pending_write.dart';
 
 /// Feuille de saisie d'une nouvelle mesure de taille.
 ///
@@ -52,8 +53,18 @@ class _UpdateSizeSheetState extends State<UpdateSizeSheet> {
     setState(() => _isSaving = true);
 
     try {
-      await KoiService.recordSize(widget.koiId, newSize);
-      if (mounted) Navigator.pop(context);
+      final confirmed = await KoiService.recordSize(
+        widget.koiId,
+        newSize,
+      ).confirmedWithin();
+      if (mounted) {
+        if (!confirmed) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text(pendingWriteMessage)),
+          );
+        }
+        Navigator.pop(context);
+      }
     } catch (e) {
       if (mounted) {
         setState(() => _isSaving = false);

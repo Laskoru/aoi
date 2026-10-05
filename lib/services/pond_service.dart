@@ -18,10 +18,18 @@ class PondService {
   /// préalable échouait donc, et le bassin n'était jamais créé. Un refus à la
   /// lecture vaut ici « absent » ; la création reste permise au seul
   /// propriétaire.
+  ///
+  /// Une seule vérification par session et par compte : les écrans
+  /// s'abonnent au bassin à chaque reconstruction, et chaque vérification
+  /// coûterait une lecture.
   static Future<void> ensureDefault(String userId) async {
+    if (_ensured.contains(userId)) return;
     final ref = _collection.doc(Pond.defaultIdFor(userId));
     try {
-      if ((await ref.get()).exists) return;
+      if ((await ref.get()).exists) {
+        _ensured.add(userId);
+        return;
+      }
     } on FirebaseException catch (e) {
       if (e.code != 'permission-denied') rethrow;
     }
@@ -31,7 +39,10 @@ class PondService {
       'name': 'Mon bassin',
       'createdAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
+    _ensured.add(userId);
   }
+
+  static final _ensured = <String>{};
 
   /// Le bassin par défaut, en flux. Il est créé au besoin avant l'écoute :
   /// la connexion le crée aussi, mais l'écran peut s'abonner avant, et un
@@ -48,14 +59,28 @@ class PondService {
         .map((doc) => doc.exists ? Pond.fromFirestore(doc) : null);
   }
 
+  /// Met à jour la fiche, sans toucher à sa photo : seul [setPhoto] la
+  /// change. Un formulaire ouvert avant l'envoi d'une photo remettrait sinon
+  /// l'ancienne, qui n'existe plus.
   static Future<void> update(Pond pond) {
-    return _collection.doc(pond.id).update(pond.toMap());
+    return _collection.doc(pond.id).update(pond.toMap()..remove('imageUrl'));
   }
 
   /// La photo du bassin, affichée en fond de l'accueil à la place de l'eau.
+  ///
+  /// Plus large que les autres photos : elle couvre toute la largeur de
+  /// l'écran. La photo et sa référence partent dans un seul lot ; l'ancienne
+  /// n'est effacée qu'une fois la nouvelle en place.
   static Future<void> setPhoto(Pond pond, Uint8List bytes) async {
-    final url = await PhotoStore.save(pond.userId, bytes);
-    await _collection.doc(pond.id).update({'imageUrl': url});
+    final photo = await PhotoStore.prepare(
+      pond.userId,
+      bytes,
+      maxSide: PhotoStore.pondMaxSide,
+    );
+    final batch = FirebaseFirestore.instance.batch();
+    photo.addTo(batch);
+    batch.update(_collection.doc(pond.id), {'imageUrl': photo.ref});
+    await batch.commit();
     await PhotoStore.delete(pond.imageUrl);
   }
 

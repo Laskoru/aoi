@@ -5,6 +5,7 @@ import '../../../theme/app_palette.dart';
 import '../../../theme/app_theme.dart';
 import '../../../theme/app_widgets.dart';
 import '../../../widgets/photo_image.dart';
+import '../../../services/pending_write.dart';
 
 /// Bande de photos d'un koï.
 ///
@@ -126,7 +127,7 @@ class _PhotoTile extends StatelessWidget {
             fit: StackFit.expand,
             children: [
               Image(
-                image: photoImage(photo.url),
+                image: photoImage(photo.url, width: 400),
                 fit: BoxFit.cover,
                 errorBuilder: (context, error, stackTrace) => ColoredBox(
                   color: context.colors.surfaceContainerHigh,
@@ -214,7 +215,26 @@ class _PhotoViewer extends StatelessWidget {
                         ),
                         onPressed: () async {
                           final navigator = Navigator.of(context);
-                          await KoiService.setMainPhoto(koi, photo);
+                          final messenger = ScaffoldMessenger.of(context);
+                          try {
+                            final confirmed = await KoiService.setMainPhoto(
+                              koi,
+                              photo,
+                            ).confirmedWithin();
+                            if (!confirmed) {
+                              messenger.showSnackBar(
+                                const SnackBar(
+                                  content: Text(pendingWriteMessage),
+                                ),
+                              );
+                            }
+                          } catch (e) {
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text("Modification impossible : $e"),
+                              ),
+                            );
+                          }
                           navigator.pop();
                         },
                       ),
@@ -263,8 +283,14 @@ class _PhotoViewer extends StatelessWidget {
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
     try {
-      await KoiService.deletePhoto(koi, photo);
+      final confirmed = await KoiService.deletePhoto(
+        koi,
+        photo,
+      ).confirmedWithin();
       navigator.pop();
+      if (!confirmed) {
+        messenger.showSnackBar(const SnackBar(content: Text(pendingWriteMessage)));
+      }
     } catch (e) {
       messenger.showSnackBar(
         SnackBar(content: Text("Suppression impossible : $e")),

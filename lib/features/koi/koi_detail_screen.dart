@@ -14,6 +14,7 @@ import 'widgets/koi_hero_header.dart';
 import 'widgets/koi_identity_card.dart';
 import 'widgets/koi_photo_gallery.dart';
 import '../../services/photo_store.dart';
+import '../../services/pending_write.dart';
 
 /// La fiche d'un koï. Elle orchestre ; chaque section vit dans son widget.
 class KoiDetailScreen extends StatelessWidget {
@@ -199,11 +200,20 @@ class KoiDetailScreen extends StatelessWidget {
 
     try {
       final Uint8List imageBytes = await pickedFile.readAsBytes();
-      await KoiService.addPhoto(koi, imageBytes);
+      // Une photo pèse plusieurs centaines de kilo-octets : plus de patience
+      // que pour une fiche.
+      final confirmed = await KoiService.addPhoto(
+        koi,
+        imageBytes,
+      ).confirmedWithin(const Duration(seconds: 20));
 
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
-        const SnackBar(content: Text("Photo ajoutée à la galerie.")),
+        SnackBar(
+          content: Text(
+            confirmed ? "Photo ajoutée à la galerie." : pendingWriteMessage,
+          ),
+        ),
       );
     } catch (e) {
       debugPrint("[AOI] Photo non enregistrée : $e");

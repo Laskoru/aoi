@@ -12,23 +12,47 @@ class KoiService {
       FirebaseFirestore.instance.collection('kois');
 
   /// Crée une fiche et l'horodate.
+  ///
+  /// La taille saisie ouvre la courbe de croissance : sans ce premier point,
+  /// la fiche annoncerait une taille que l'historique ignore.
   static Future<void> create(Koi koi) {
-    return _collection.add({
-      ...koi.toMap(),
-      'createdAt': FieldValue.serverTimestamp(),
-    });
+    final ref = _collection.doc();
+    return Future.wait<Object?>([
+      ref.set({...koi.toMap(), 'createdAt': FieldValue.serverTimestamp()}),
+      // Envoyé après la fiche, dans l'ordre des écritures : les règles
+      // exigent que le koï existe déjà.
+      if (koi.size > 0)
+        ref.collection('growth').add({
+          'size': koi.size,
+          'timestamp': FieldValue.serverTimestamp(),
+        }),
+    ]);
   }
 
   /// Met à jour une fiche existante.
   ///
+  /// La photo n'est pas réécrite : seule la galerie la change, et un
+  /// formulaire ouvert avant l'envoi d'une photo remettrait l'ancienne.
   /// `createdAt` n'est pas dans [Koi.toMap] et reste donc intact ; l'ancien
   /// champ `age` est effacé dès qu'une date de naissance est renseignée, pour
   /// qu'une valeur périmée ne traîne pas à côté de la vraie.
-  static Future<void> update(Koi koi) {
-    return _collection.doc(koi.id).update({
-      ...koi.toMap(),
+  ///
+  /// Une taille différente de [previousSize] rejoint aussi l'historique de
+  /// croissance, dans le même lot, comme avec [recordSize].
+  static Future<void> update(Koi koi, {double? previousSize}) {
+    final ref = _collection.doc(koi.id);
+    final batch = FirebaseFirestore.instance.batch();
+    batch.update(ref, {
+      ...(koi.toMap()..remove('imageUrl')),
       if (koi.birthDate != null) 'age': FieldValue.delete(),
     });
+    if (previousSize != null && koi.size != previousSize && koi.size > 0) {
+      batch.set(ref.collection('growth').doc(), {
+        'size': koi.size,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    }
+    return batch.commit();
   }
 
   // --- Croissance et naissance ---
@@ -84,19 +108,21 @@ class KoiService {
 
   /// Ajoute une photo à la galerie.
   ///
-  /// La première photo devient d'office la principale : sans cela, un koï
-  /// resterait sans vignette alors qu'une photo existe.
+  /// L'image, son entrée de galerie et, pour la première, la vignette du koï
+  /// partent dans un seul lot : jamais d'image sans fiche qui la désigne, ni
+  /// l'inverse. La première photo devient d'office la principale : sans cela,
+  /// un koï resterait sans vignette alors qu'une photo existe.
   static Future<void> addPhoto(Koi koi, Uint8List bytes) async {
-    final url = await PhotoStore.save(koi.userId, bytes);
-
-    await _collection.doc(koi.id).collection('photos').add({
-      'url': url,
+    final photo = await PhotoStore.prepare(koi.userId, bytes);
+    final ref = _collection.doc(koi.id);
+    final batch = FirebaseFirestore.instance.batch();
+    photo.addTo(batch);
+    batch.set(ref.collection('photos').doc(), {
+      'url': photo.ref,
       'takenAt': FieldValue.serverTimestamp(),
     });
-
-    if (koi.imageUrl == null) {
-      await _collection.doc(koi.id).update({'imageUrl': url});
-    }
+    if (koi.imageUrl == null) batch.update(ref, {'imageUrl': photo.ref});
+    await batch.commit();
   }
 
   /// Désigne la photo qui représente le koï dans la grille et l'en-tête.
@@ -140,21 +166,28 @@ class KoiService {
   /// l'information qu'un parent a existé.
   static Future<void> delete(Koi koi) async {
     final doc = _collection.doc(koi.id);
-    final growth = await doc.collection('growth').get();
-    final photos = await doc.collection('photos').get();
+    // Lus sur le serveur : hors réseau, l'échec est immédiat, là où le cache
+    // ne rendrait qu'une partie de l'historique et laisserait le reste
+    // orphelin, illisible et ineffaçable une fois le koï parti.
+    const server = GetOptions(source: Source.server);
+    final growth = (await doc.collection('growth').get(server)).docs;
+    final photos = (await doc.collection('photos').get(server)).docs;
 
-    final batch = FirebaseFirestore.instance.batch();
-    for (final entry in growth.docs) {
-      batch.delete(entry.reference);
+    // Les règles déduisent la propriété des sous-documents du koï : ils
+    // partent avant lui, par lots de 400 au plus (Firestore plafonne un lot
+    // à 500 écritures).
+    final children = [...growth, ...photos];
+    for (var start = 0; start < children.length; start += 400) {
+      final batch = FirebaseFirestore.instance.batch();
+      for (final child in children.skip(start).take(400)) {
+        batch.delete(child.reference);
+      }
+      await batch.commit();
     }
-    for (final photo in photos.docs) {
-      batch.delete(photo.reference);
-    }
-    batch.delete(doc);
-    await batch.commit();
+    await doc.delete();
 
     final galleryUrls = [
-      for (final photo in photos.docs) photo.data()['url'] as String?,
+      for (final photo in photos) photo.data()['url'] as String?,
     ];
     for (final url in galleryUrls) {
       await PhotoStore.delete(url);

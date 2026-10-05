@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
@@ -7,6 +8,7 @@ import '../../services/koi_service.dart';
 import '../../theme/app_palette.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/app_widgets.dart';
+import '../../services/pending_write.dart';
 
 /// Formulaire d'un koï, en création comme en modification.
 ///
@@ -163,14 +165,19 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
             : null,
       );
 
-      if (_isEditing) {
-        await KoiService.update(koi);
-      } else {
-        await KoiService.create(koi);
-      }
+      final confirmed = await (_isEditing
+              ? KoiService.update(koi, previousSize: widget.existing!.size)
+              : KoiService.create(koi))
+          .confirmedWithin();
 
       if (mounted) {
-        _showSnack(_isEditing ? 'Fiche mise à jour.' : 'Carpe koï ajoutée.');
+        _showSnack(
+          !confirmed
+              ? pendingWriteMessage
+              : _isEditing
+              ? 'Fiche mise à jour.'
+              : 'Carpe koï ajoutée.',
+        );
         Navigator.pop(context);
       }
     } catch (e) {
@@ -269,6 +276,7 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _nameController,
+                      inputFormatters: [LengthLimitingTextInputFormatter(80)],
                       textCapitalization: TextCapitalization.words,
                       decoration: _inputDecoration(
                         'Nom du koï',
@@ -282,6 +290,7 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _varietyController,
+                      inputFormatters: [LengthLimitingTextInputFormatter(80)],
                       textCapitalization: TextCapitalization.words,
                       decoration: _inputDecoration(
                         'Variété (ex : Kohaku)',
@@ -355,6 +364,7 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _breederController,
+                      inputFormatters: [LengthLimitingTextInputFormatter(80)],
                       textCapitalization: TextCapitalization.words,
                       decoration: _inputDecoration(
                         'Éleveur (optionnel)',
@@ -364,6 +374,7 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _originController,
+                      inputFormatters: [LengthLimitingTextInputFormatter(80)],
                       decoration: _inputDecoration(
                         'Provenance (optionnel)',
                         Icons.place_rounded,
@@ -380,6 +391,7 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _notesController,
+                      maxLength: 2000,
                       maxLines: 3,
                       decoration: _inputDecoration(
                         'Observations, particularités…',
@@ -602,6 +614,7 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
           const SizedBox(height: 12),
           TextFormField(
             controller: manualController,
+            inputFormatters: [LengthLimitingTextInputFormatter(80)],
             decoration: _inputDecoration(manualLabel, Icons.edit_note_rounded),
           ),
         ],

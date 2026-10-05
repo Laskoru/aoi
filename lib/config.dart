@@ -18,4 +18,9 @@ class AppConfig {
     defaultValue:
         '144445288274-m1tccaibpjgj3dtrq6hobeh9qocag4pr.apps.googleusercontent.com',
   );
+
+  /// Politique de confidentialité publiée : la même adresse que celle
+  /// déclarée dans la Play Console, qui exige aussi un lien dans l'appli.
+  static final Uri privacyPolicyUrl =
+      Uri.parse('https://aoi-koi.web.app/confidentialite.html');
 }

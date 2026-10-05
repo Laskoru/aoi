@@ -27,22 +27,16 @@ class AuthService {
   static Future<void> signOut() => FirebaseAuth.instance.signOut();
 
   /// Fait confirmer son identité à l'utilisateur avant une opération
-  /// irréversible.
+  /// irréversible : Google rouvre sa fenêtre de connexion, sur le même
+  /// compte.
   ///
-  /// Firebase refuse de supprimer un compte dont la dernière connexion date de
-  /// plus de cinq minutes. Si elle est plus récente que quatre minutes, on
-  /// évite de redemander ; sinon Google rouvre sa fenêtre de connexion, sur le
-  /// même compte.
+  /// Toujours demandé, même juste après la connexion : Firebase refuse de
+  /// supprimer un compte connecté depuis plus de cinq minutes, et une
+  /// suppression longue entamée à la quatrième minute échouerait à la fin.
   static Future<void> reauthenticate() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       throw FirebaseAuthException(code: 'no-current-user');
-    }
-
-    final lastSignIn = user.metadata.lastSignInTime;
-    if (lastSignIn != null &&
-        DateTime.now().difference(lastSignIn) < const Duration(minutes: 4)) {
-      return;
     }
 
     if (kIsWeb) {

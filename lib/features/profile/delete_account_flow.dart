@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/account_service.dart';
@@ -50,14 +52,23 @@ Future<void> startAccountDeletion(BuildContext context) async {
     builder: (_) => const _DeletionProgressDialog(),
   );
   try {
-    await AccountService.deleteAllData(user.uid);
+    // Lectures sur le serveur : sans réseau, l'échec est immédiat. Le délai
+    // couvre une connexion qui tomberait en cours de route, pour que la
+    // fenêtre de progression ne reste jamais bloquée.
+    await AccountService.deleteAllData(user.uid)
+        .timeout(const Duration(minutes: 3));
   } catch (e) {
     navigator.pop();
     messenger.showSnackBar(
       SnackBar(
         content: Text(
-          "La suppression s'est interrompue ($e). Relancez-la : elle "
-          "reprendra là où elle s'est arrêtée.",
+          e is TimeoutException ||
+                  (e is FirebaseException && e.code == 'unavailable')
+              ? "Connexion à Internet requise : la suppression n'a pas pu "
+                    "aboutir. Relancez-la une fois connecté, elle reprendra là "
+                    "où elle s'est arrêtée."
+              : "La suppression s'est interrompue ($e). Relancez-la : elle "
+                    "reprendra là où elle s'est arrêtée.",
         ),
       ),
     );
@@ -67,21 +78,30 @@ Future<void> startAccountDeletion(BuildContext context) async {
 
   // 3. Le compte. Sa disparition renvoie seule à l'écran de connexion.
   try {
-    await AuthService.deleteCurrentUser();
+    try {
+      await AuthService.deleteCurrentUser();
+    } on FirebaseAuthException catch (e) {
+      // Une suppression très longue a pu dépasser les cinq minutes de
+      // Firebase : une nouvelle confirmation d'identité, et on réessaie.
+      if (e.code != 'requires-recent-login') rethrow;
+      await AuthService.reauthenticate();
+      await AuthService.deleteCurrentUser();
+    }
     messenger.showSnackBar(
       const SnackBar(
         content: Text("Votre compte et toutes vos données ont été supprimés."),
       ),
     );
-  } on FirebaseAuthException catch (e) {
+  } catch (e) {
+    final code = e is FirebaseAuthException ? e.code : '$e';
     messenger.showSnackBar(
       SnackBar(
         content: Text(
-          e.code == 'requires-recent-login'
-              ? "Vos données sont effacées, mais le compte n'a pas pu l'être : "
-                    "déconnectez-vous, reconnectez-vous et relancez la suppression."
+          _isCancellation(code)
+              ? "Vos données sont effacées, mais le compte n'a pas pu l'être "
+                    "sans confirmation. Relancez la suppression."
               : "Vos données sont effacées, mais le compte n'a pas pu l'être "
-                    "(${e.code}). Relancez la suppression.",
+                    "($code). Relancez la suppression.",
         ),
       ),
     );

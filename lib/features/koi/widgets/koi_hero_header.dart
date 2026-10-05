@@ -53,7 +53,7 @@ class KoiHeroHeader extends StatelessWidget {
                           radius: 46,
                           backgroundColor: Colors.white.withValues(alpha: 0.15),
                           backgroundImage: koi.imageUrl != null
-                              ? photoImage(koi.imageUrl!)
+                              ? photoImage(koi.imageUrl!, width: 360)
                               : null,
                           child: koi.imageUrl == null
                               ? const KoiEmblem(size: 60, color: Colors.white)

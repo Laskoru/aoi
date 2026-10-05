@@ -25,13 +25,21 @@ class FishGroupService {
     });
   }
 
+  /// Met à jour la fiche, sans toucher à sa photo : seul [setPhoto] la
+  /// change. Un formulaire ouvert avant l'envoi d'une photo remettrait sinon
+  /// l'ancienne, qui n'existe plus.
   static Future<void> update(FishGroup group) {
-    return _collection.doc(group.id).update(group.toMap());
+    return _collection.doc(group.id).update(group.toMap()..remove('imageUrl'));
   }
 
+  /// Remplace la photo du groupe : la photo et sa référence partent dans un
+  /// seul lot, l'ancienne n'est effacée qu'une fois la nouvelle en place.
   static Future<void> setPhoto(FishGroup group, Uint8List bytes) async {
-    final url = await PhotoStore.save(group.userId, bytes);
-    await _collection.doc(group.id).update({'imageUrl': url});
+    final photo = await PhotoStore.prepare(group.userId, bytes);
+    final batch = FirebaseFirestore.instance.batch();
+    photo.addTo(batch);
+    batch.update(_collection.doc(group.id), {'imageUrl': photo.ref});
+    await batch.commit();
     await PhotoStore.delete(group.imageUrl);
   }
 

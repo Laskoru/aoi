@@ -10,6 +10,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/app_widgets.dart';
 import '../../services/photo_store.dart';
 import '../../widgets/photo_image.dart';
+import '../../services/pending_write.dart';
 
 /// La fiche d'une plante.
 class PlantDetailScreen extends StatelessWidget {
@@ -170,8 +171,15 @@ class _Header extends StatelessWidget {
     final messenger = ScaffoldMessenger.of(context);
     try {
       final Uint8List bytes = await picked.readAsBytes();
-      await PlantService.setPhoto(plant, bytes);
-      messenger.showSnackBar(const SnackBar(content: Text("Photo mise à jour.")));
+      final confirmed = await PlantService.setPhoto(
+        plant,
+        bytes,
+      ).confirmedWithin(const Duration(seconds: 20));
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(confirmed ? "Photo mise à jour." : pendingWriteMessage),
+        ),
+      );
     } catch (e) {
       messenger.showSnackBar(
         SnackBar(content: Text("Erreur lors du transfert : $e")),
@@ -210,7 +218,7 @@ class _Header extends StatelessWidget {
                       radius: 46,
                       backgroundColor: Colors.white.withValues(alpha: 0.15),
                       backgroundImage: plant.imageUrl != null
-                          ? photoImage(plant.imageUrl!)
+                          ? photoImage(plant.imageUrl!, width: 360)
                           : null,
                       child: plant.imageUrl == null
                           ? const Icon(
