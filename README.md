@@ -122,6 +122,17 @@ données du bassin sont lisibles par n'importe qui.
 firebase deploy --only firestore:rules,firestore:indexes,storage
 ```
 
+Avant chaque déploiement de `firestore.rules`, les éprouver dans l'émulateur
+(`tool/firestore-rules-test/`, 94 cas : isolement entre comptes, transfert de
+propriété, requêtes sans filtre, valeurs validées). Il faut Node et Java 21
+ou plus ; celui d'Android Studio convient
+(`C:\Program Files\Android\Android Studio\jbr\bin` dans le PATH).
+
+```bash
+npm --prefix tool/firestore-rules-test install
+firebase emulators:exec --only firestore --project demo-aoi "npm --prefix tool/firestore-rules-test test"
+```
+
 ## Thème
 
 Toutes les couleurs, tailles de texte, rayons, espacements et durées vivent

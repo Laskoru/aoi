@@ -2,69 +2,32 @@ rules_version = '2';
 
 // Règles de sécurité Cloud Storage — AOI KOI
 //
-// Les photos de koï sont rangées par utilisateur :
-//   kois_photos/{userId}/{koiId}.jpg
+// L'appli n'écrit plus dans Cloud Storage : depuis février 2026, il exige la
+// formule Blaze, et les photos sont rangées dans Firestore (collection
+// `photos`). Restent les photos d'avant, sous
+//   kois_photos/{userId}/…  et  user_media/{userId}/…
+// que leur propriétaire peut encore lire et supprimer. Toute écriture est
+// refusée : passer un jour à Blaze n'ouvrirait pas de stockage facturable à
+// n'importe quel compte connecté.
 //
 // Déploiement : firebase deploy --only storage
 
 service firebase.storage {
   match /b/{bucket}/o {
 
-    function isSignedIn() {
-      return request.auth != null;
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
     }
 
-    function isImage() {
-      return request.resource.contentType.matches('image/.*');
+    match /kois_photos/{userId}/{allPaths=**} {
+      allow read, delete: if isOwner(userId);
     }
 
-    function underSizeLimit() {
-      return request.resource.size < 8 * 1024 * 1024; // 8 Mo
-    }
-
-    // --- Médias des autres domaines : plantes, groupes de poissons, bassin ---
-    //
-    // user_media/{userId}/plants/{plantId}.jpg, etc. Un seul bloc suffit :
-    // c'est le segment userId qui porte la propriété, quel que soit le reste.
     match /user_media/{userId}/{allPaths=**} {
-      allow read:   if isSignedIn() && request.auth.uid == userId;
-      allow write:  if isSignedIn() && request.auth.uid == userId
-                    && isImage() && underSizeLimit();
-      allow delete: if isSignedIn() && request.auth.uid == userId;
+      allow read, delete: if isOwner(userId);
     }
 
-    // --- Photos de koï, rangées par propriétaire ---
-
-    // Galerie d'un koï : kois_photos/{userId}/{koiId}/{photoId}.jpg
-    match /kois_photos/{userId}/{koiId}/{fileName} {
-      allow read:   if isSignedIn() && request.auth.uid == userId;
-      allow write:  if isSignedIn() && request.auth.uid == userId
-                    && isImage() && underSizeLimit();
-      allow delete: if isSignedIn() && request.auth.uid == userId;
-    }
-
-    // Photo unique, avant l'arrivée de la galerie :
-    // kois_photos/{userId}/{koiId}.jpg
-    match /kois_photos/{userId}/{fileName} {
-      allow read:   if isSignedIn() && request.auth.uid == userId;
-      allow write:  if isSignedIn() && request.auth.uid == userId
-                    && isImage() && underSizeLimit();
-      allow delete: if isSignedIn() && request.auth.uid == userId;
-    }
-
-    // --- Ancien emplacement, avant le rangement par utilisateur ---
-    //
-    // Les photos uploadées par les versions précédentes se trouvent
-    // directement dans kois_photos/{koiId}.jpg, sans dossier utilisateur : on
-    // ne peut donc pas en déduire le propriétaire. Lecture seule pour les
-    // utilisateurs connectés, aucune écriture. À supprimer une fois les
-    // anciennes photos migrées.
-    match /kois_photos/{fileName} {
-      allow read:  if isSignedIn();
-      allow write: if false;
-    }
-
-    // Tout le reste est refusé par défaut.
+    // Tout le reste, et toute écriture, est refusé.
     match /{allPaths=**} {
       allow read, write: if false;
     }

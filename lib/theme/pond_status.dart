@@ -25,6 +25,14 @@ extension WaterConditionStyle on WaterCondition {
     WaterCondition.danger => 'DANGER',
   };
 
+  /// L'état de l'eau dans son ensemble, accordé au féminin : [label] qualifie
+  /// un paramètre (« pH sain »), pas l'eau.
+  String get waterSummary => switch (this) {
+    WaterCondition.ideal => 'Eau saine',
+    WaterCondition.warning => 'Eau à surveiller',
+    WaterCondition.danger => 'Eau en danger',
+  };
+
   IconData get icon => switch (this) {
     WaterCondition.ideal => Icons.check_circle_rounded,
     WaterCondition.warning => Icons.error_rounded,

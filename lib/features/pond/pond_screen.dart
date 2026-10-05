@@ -293,7 +293,7 @@ class _PondName extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "Bienvenue dans ton écosystème,",
+          "Bienvenue dans votre écosystème,",
           style: TextStyle(
             fontSize: 13,
             color: Colors.white.withValues(alpha: 0.75),
@@ -348,11 +348,11 @@ class _WaterPill extends StatelessWidget {
         final condition = worstCondition(latest.readings.map((r) => r.condition));
         return Semantics(
           button: true,
-          label: "Eau : ${condition.label}",
+          label: condition.waterSummary,
           child: GestureDetector(
             onTap: () => context.go('/eau'),
             child: StatusPill(
-              label: "EAU ${condition.label}",
+              label: condition.waterSummary.toUpperCase(),
               color: Colors.white,
               background: condition.color(context).withValues(alpha: 0.85),
               icon: condition.icon,

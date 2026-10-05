@@ -1,0 +1,13 @@
+{
+  "name": "aoi-firestore-rules-test",
+  "private": true,
+  "type": "module",
+  "description": "Tests des règles Firestore d'AOI KOI, dans l'émulateur.",
+  "scripts": {
+    "test": "node --test rules.test.mjs"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^5.0.2",
+    "firebase": "^12.19.0"
+  }
+}
