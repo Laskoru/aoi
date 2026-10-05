@@ -60,7 +60,7 @@ Son nom, son volume, sa profondeur, et sa photo en ouverture de l'application.
 
 VOS DONNÉES VOUS APPARTIENNENT
 • Connexion avec votre compte Google.
-• Vos données ne sont visibles que par vous.
+• Vos données sont hébergées en Europe et ne sont visibles que par vous.
 • Aucune publicité, aucun traceur, aucune revente.
 • Suppression du compte et de toutes les données depuis l'application, à tout moment.
 
