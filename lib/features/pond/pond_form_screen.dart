@@ -88,7 +88,7 @@ class _PondFormScreenState extends State<PondFormScreen> {
   String? _optionalRange(String? v, double max) {
     if (v == null || v.trim().isEmpty) return null;
     final parsed = _parse(v);
-    if (parsed == null || parsed < 0) return 'Valeur invalide';
+    if (parsed == null || !parsed.isFinite || parsed < 0) return 'Valeur invalide';
     if (parsed > max) return 'Valeur irréaliste';
     return null;
   }

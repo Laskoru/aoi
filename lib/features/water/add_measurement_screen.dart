@@ -90,7 +90,9 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
   String? _requiredRange(String? value, double min, double max) {
     if (value == null || value.trim().isEmpty) return 'Obligatoire';
     final parsed = double.tryParse(value.trim().replaceAll(',', '.'));
-    if (parsed == null) return 'Valeur invalide';
+    // « NaN » collé dans le champ se lit comme un nombre, que les règles
+    // refuseraient : l'erreur doit venir d'ici.
+    if (parsed == null || !parsed.isFinite) return 'Valeur invalide';
     if (parsed < min || parsed > max) return 'Entre $min et $max';
     return null;
   }

@@ -19,6 +19,9 @@ comprises).
   second essai la créait une deuxième fois. Sur Android, la fiche et sa
   première mesure de taille partaient en deux écritures dont l'ordre
   d'arrivée n'est pas garanti ; elles partent désormais en un seul lot.
+- **Textes avec emoji** : un nom ou des notes riches en emoji pouvaient être
+  refusés à l'enregistrement alors que le formulaire les acceptait (les
+  règles comptaient un emoji pour deux caractères).
 
 ### En coulisses (hors notes Play)
 - Configuration Android à jour avec la clé de signature de Google Play.
@@ -26,6 +29,12 @@ comprises).
   lot que la création du koï. **À déployer avant de publier la 2.0.1**
   (`firebase deploy --only firestore:rules`) : sans elles, tout ajout de koï
   serait refusé. Elles ne changent rien pour la 2.0.0.
+- Règles Firestore : plafonds de longueur deux fois et demie plus hauts que
+  les limites de saisie de l'appli, pour les emoji (même déploiement).
+- Champs numériques : « NaN » collé dans un champ est refusé par le
+  formulaire au lieu de l'être par le serveur.
+- Tests des règles : chaque formulaire rempli au minimum, textes en emoji
+  (103 tests).
 
 ### Notes Play prêtes à coller
 ```

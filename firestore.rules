@@ -6,6 +6,11 @@ rules_version = '2';
 // lire et écrire que ses propres documents. Rien n'est accessible sans
 // authentification.
 //
+// Longueurs : l'appli limite la saisie en caractères visibles (80 pour un nom,
+// 2000 pour des notes) ; les règles comptent en unités UTF-16, où un emoji en
+// vaut au moins deux. Leurs plafonds, deux fois et demie plus hauts, bornent
+// la taille des documents sans refuser un texte que l'appli a laissé passer.
+//
 // Déploiement : firebase deploy --only firestore:rules
 
 service cloud.firestore {
@@ -40,14 +45,14 @@ service cloud.firestore {
       // rester modifiable, sans quoi on ne pourrait plus la compléter.
       function wellFormedKoi() {
         let d = request.resource.data;
-        return (!('name' in d) || (d.name is string && d.name.size() <= 80))
-            && (!('variety' in d) || (d.variety is string && d.variety.size() <= 80))
+        return (!('name' in d) || (d.name is string && d.name.size() <= 200))
+            && (!('variety' in d) || (d.variety is string && d.variety.size() <= 200))
             && (!('size' in d) || (d.size is number && d.size >= 0 && d.size <= 200))
             // birthDate est le nouveau champ, age l'ancien : les deux sont
             // tolérés le temps de la migration.
             && (!('birthDate' in d) || d.birthDate == null || d.birthDate is timestamp)
             && (!('age' in d) || d.age == null || d.age is number)
-            && (!('notes' in d) || d.notes == null || (d.notes is string && d.notes.size() <= 2000))
+            && (!('notes' in d) || d.notes == null || (d.notes is string && d.notes.size() <= 5000))
             && (!('pondId' in d) || d.pondId == null || d.pondId is string);
       }
 
@@ -124,10 +129,10 @@ service cloud.firestore {
     match /ponds/{pondId} {
       function wellFormedPond() {
         let d = request.resource.data;
-        return (!('name' in d) || (d.name is string && d.name.size() > 0 && d.name.size() <= 80))
+        return (!('name' in d) || (d.name is string && d.name.size() > 0 && d.name.size() <= 200))
             && (!('volumeLiters' in d) || d.volumeLiters == null || (d.volumeLiters is number && d.volumeLiters >= 0))
             && (!('depthCm' in d) || d.depthCm == null || (d.depthCm is number && d.depthCm >= 0))
-            && (!('notes' in d) || d.notes == null || (d.notes is string && d.notes.size() <= 2000));
+            && (!('notes' in d) || d.notes == null || (d.notes is string && d.notes.size() <= 5000));
       }
 
       // Lire un bassin absent est permis : on n'y apprend rien, et l'appli
@@ -165,14 +170,14 @@ service cloud.firestore {
     match /plants/{plantId} {
       function wellFormedPlant() {
         let d = request.resource.data;
-        return (!('name' in d) || (d.name is string && d.name.size() > 0 && d.name.size() <= 80))
-            && (!('species' in d) || d.species == null || (d.species is string && d.species.size() <= 120))
+        return (!('name' in d) || (d.name is string && d.name.size() > 0 && d.name.size() <= 200))
+            && (!('species' in d) || d.species == null || (d.species is string && d.species.size() <= 300))
             && (!('zone' in d) || d.zone in ['berge', 'marecage', 'immergee', 'profonde'])
             && (!('quantity' in d) || (d.quantity is int && d.quantity >= 0 && d.quantity <= 10000))
             && (!('isFloating' in d) || d.isFloating is bool)
             && (!('isOxygenating' in d) || d.isOxygenating is bool)
             && (!('plantedAt' in d) || d.plantedAt == null || d.plantedAt is timestamp)
-            && (!('notes' in d) || d.notes == null || (d.notes is string && d.notes.size() <= 2000))
+            && (!('notes' in d) || d.notes == null || (d.notes is string && d.notes.size() <= 5000))
             && (!('pondId' in d) || d.pondId == null || d.pondId is string);
       }
 
@@ -187,10 +192,10 @@ service cloud.firestore {
     match /fish_groups/{groupId} {
       function wellFormedGroup() {
         let d = request.resource.data;
-        return (!('species' in d) || (d.species is string && d.species.size() > 0 && d.species.size() <= 80))
+        return (!('species' in d) || (d.species is string && d.species.size() > 0 && d.species.size() <= 200))
             && (!('count' in d) || (d.count is int && d.count >= 0 && d.count <= 100000))
             && (!('introducedAt' in d) || d.introducedAt == null || d.introducedAt is timestamp)
-            && (!('notes' in d) || d.notes == null || (d.notes is string && d.notes.size() <= 2000))
+            && (!('notes' in d) || d.notes == null || (d.notes is string && d.notes.size() <= 5000))
             && (!('pondId' in d) || d.pondId == null || d.pondId is string);
       }
 

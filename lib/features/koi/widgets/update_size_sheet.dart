@@ -43,7 +43,7 @@ class _UpdateSizeSheetState extends State<UpdateSizeSheet> {
   Future<void> _save() async {
     final newSize = double.tryParse(_controller.text.trim().replaceAll(',', '.'));
 
-    if (newSize == null || newSize <= 0 || newSize > 200) {
+    if (newSize == null || !newSize.isFinite || newSize <= 0 || newSize > 200) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Entrez une taille valide, en centimètres.")),
       );

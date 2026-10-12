@@ -318,7 +318,7 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
                         final parsed = double.tryParse(
                           value.trim().replaceAll(',', '.'),
                         );
-                        if (parsed == null || parsed <= 0) {
+                        if (parsed == null || !parsed.isFinite || parsed <= 0) {
                           return 'Taille invalide';
                         }
                         if (parsed > 200) return 'Taille irréaliste';

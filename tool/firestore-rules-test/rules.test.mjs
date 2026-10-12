@@ -130,8 +130,13 @@ describe('valeurs validées', () => {
     assertFails(setDoc(doc(alice, 'kois/k2'), { userId: 'alice', size: 20 })));
   test('koï de plus de 200 cm refusé', () =>
     assertFails(setDoc(doc(alice, 'kois/k2'), { userId: 'alice', name: 'Géant', size: 250 })));
-  test('nom de koï de plus de 80 caractères refusé', () =>
-    assertFails(setDoc(doc(alice, 'kois/k2'), { userId: 'alice', name: 'x'.repeat(81), size: 20 })));
+  test('nom de koï démesuré refusé', () =>
+    assertFails(setDoc(doc(alice, 'kois/k2'), { userId: 'alice', name: 'x'.repeat(201), size: 20 })));
+  // L'appli compte un emoji pour un caractère, les règles pour deux.
+  test("nom de 80 emoji, permis par l'appli, accepté", () =>
+    assertSucceeds(setDoc(doc(alice, 'kois/emoji'), { userId: 'alice', name: '🌸'.repeat(80), size: 20 })));
+  test("notes de 2000 emoji, permises par l'appli, acceptées", () =>
+    assertSucceeds(setDoc(doc(alice, 'plants/emoji'), { userId: 'alice', name: 'Lotus', notes: '🌸'.repeat(2000) })));
   test('pH supérieur à 14 refusé', () =>
     assertFails(setDoc(doc(alice, 'measurements/m2'), { userId: 'alice', ph: 15, temperature: 18 })));
   test('température non numérique refusée', () =>
@@ -163,6 +168,52 @@ describe('bassin par défaut', () => {
     assertFails(setDoc(doc(bob, 'ponds/default_carol'), { userId: 'bob', name: 'Pas le mien' })));
   test('nom vide refusé', () =>
     assertFails(updateDoc(doc(alice, 'ponds/default_alice'), { name: '' })));
+});
+
+// Ce que chaque formulaire envoie quand on ne remplit que l'obligatoire : les
+// champs facultatifs laissés vides partent à null.
+describe('formulaires remplis au minimum', () => {
+  before(seed);
+
+  test('koï : nom, variété et taille, avec sa première mesure', () => {
+    const batch = writeBatch(alice);
+    const koi = doc(collection(alice, 'kois'));
+    batch.set(koi, {
+      userId: 'alice', name: 'Yuki', variety: 'Kohaku', size: 30.5,
+      birthDate: null, sex: 'unknown', status: 'alive', breeder: null,
+      origin: null, notes: null, imageUrl: null, pondId: null,
+      fatherId: null, fatherNameManual: null, motherId: null,
+      motherNameManual: null, createdAt: serverTimestamp(),
+    });
+    batch.set(doc(collection(koi, 'growth')), { size: 30.5, timestamp: serverTimestamp() });
+    return assertSucceeds(batch.commit());
+  });
+  test('plante : nom seulement', () =>
+    assertSucceeds(addDoc(collection(alice, 'plants'), {
+      userId: 'alice', pondId: null, name: 'Lotus', species: null,
+      zone: 'marecage', isFloating: false, isOxygenating: false, quantity: 1,
+      plantedAt: null, imageUrl: null, notes: null, createdAt: serverTimestamp(),
+    })));
+  test('autres habitants : espèce et effectif, avec ou sans photo', async () => {
+    const group = {
+      userId: 'alice', pondId: null, species: 'Ide mélanote', count: 5,
+      introducedAt: null, imageUrl: null, notes: null, createdAt: serverTimestamp(),
+    };
+    await assertSucceeds(addDoc(collection(alice, 'fish_groups'), group));
+    const batch = writeBatch(alice);
+    const photo = doc(collection(alice, 'photos'));
+    batch.set(photo, { userId: 'alice', data: bytes(300), createdAt: serverTimestamp() });
+    batch.set(doc(collection(alice, 'fish_groups')), { ...group, imageUrl: `photo:${photo.id}` });
+    await assertSucceeds(batch.commit());
+  });
+  test('mesure : pH et température seulement', () =>
+    assertSucceeds(addDoc(collection(alice, 'measurements'), {
+      userId: 'alice', ph: 7.5, temperature: 18.5, timestamp: serverTimestamp(),
+    })));
+  test('bassin : le nom seulement, le reste vidé', () =>
+    assertSucceeds(updateDoc(doc(alice, 'ponds/default_alice'), {
+      userId: 'alice', name: 'Mon bassin', volumeLiters: null, depthCm: null, notes: null,
+    })));
 });
 
 describe('le reste est fermé', () => {
