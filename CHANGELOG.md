@@ -6,7 +6,7 @@ prend le numéro de la version, et ses nouveautés deviennent les notes de
 version de la Play Console (500 caractères au plus, balises `<fr-FR>`
 comprises).
 
-## À venir — 2.0.1
+## 2.0.1 (8) — octobre 2026
 
 ### Nouveautés
 - **Photo des autres habitants** : un groupe de poissons (ides, esturgeons,
