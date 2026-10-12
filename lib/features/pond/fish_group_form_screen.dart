@@ -11,6 +11,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/app_widgets.dart';
 import '../../services/pending_write.dart';
 import '../../widgets/photo_image.dart';
+import '../../widgets/form_body.dart';
 
 /// Formulaire d'un groupe de poissons, en création comme en modification.
 class FishGroupFormScreen extends StatefulWidget {
@@ -81,7 +82,7 @@ class _FishGroupFormScreenState extends State<FishGroupFormScreen> {
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validateAndReveal()) return;
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       _snack('Session expirée, reconnectez-vous.');
@@ -197,8 +198,7 @@ class _FishGroupFormScreenState extends State<FishGroupFormScreen> {
       ),
       body: Form(
         key: _formKey,
-        child: ListView(
-          physics: const BouncingScrollPhysics(),
+        child: FormBody(
           padding: const EdgeInsets.all(AppSpacing.md),
           children: [
             Center(

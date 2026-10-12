@@ -6,6 +6,7 @@ import '../../theme/app_palette.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/app_widgets.dart';
 import '../../services/pending_write.dart';
+import '../../widgets/form_body.dart';
 
 /// Nom, volume et profondeur du bassin.
 class PondFormScreen extends StatefulWidget {
@@ -52,7 +53,7 @@ class _PondFormScreenState extends State<PondFormScreen> {
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validateAndReveal()) return;
     setState(() => _saving = true);
     try {
       final confirmed = await PondService.update(
@@ -108,8 +109,7 @@ class _PondFormScreenState extends State<PondFormScreen> {
       ),
       body: Form(
         key: _formKey,
-        child: ListView(
-          physics: const BouncingScrollPhysics(),
+        child: FormBody(
           padding: const EdgeInsets.all(AppSpacing.md),
           children: [
             const SectionLabel("Identité"),

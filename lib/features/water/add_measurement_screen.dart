@@ -6,6 +6,7 @@ import '../../theme/app_palette.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/app_widgets.dart';
 import '../../services/pending_write.dart';
+import '../../widgets/form_body.dart';
 
 class AddMeasurementScreen extends StatefulWidget {
   const AddMeasurementScreen({super.key});
@@ -45,7 +46,7 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
   }
 
   Future<void> _saveMeasurement() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validateAndReveal()) return;
 
     final User? user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -123,8 +124,7 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
         padding: const EdgeInsets.all(AppSpacing.md),
         child: Form(
           key: _formKey,
-          child: ListView(
-            physics: const BouncingScrollPhysics(),
+          child: FormBody(
             children: [
               const SectionLabel("Relevé principal"),
               const SizedBox(height: 12),

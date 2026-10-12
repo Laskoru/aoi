@@ -9,6 +9,7 @@ import '../../theme/app_palette.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/app_widgets.dart';
 import '../../services/pending_write.dart';
+import '../../widgets/form_body.dart';
 
 /// Formulaire d'un koï, en création comme en modification.
 ///
@@ -126,7 +127,7 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validateAndReveal()) return;
 
     final User? user = FirebaseAuth.instance.currentUser;
     if (user == null) {
@@ -269,8 +270,7 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Form(
                 key: _formKey,
-                child: ListView(
-                  physics: const BouncingScrollPhysics(),
+                child: FormBody(
                   children: [
                     const SectionLabel("Informations de base"),
                     const SizedBox(height: 12),
