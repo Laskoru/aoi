@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import '../../models/fish_group.dart';
 import '../../services/fish_group_service.dart';
+import '../../services/photo_store.dart';
 import '../../theme/app_palette.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/app_widgets.dart';
 import '../../services/pending_write.dart';
+import '../../widgets/photo_image.dart';
 
 /// Formulaire d'un groupe de poissons, en création comme en modification.
 class FishGroupFormScreen extends StatefulWidget {
@@ -26,6 +29,9 @@ class _FishGroupFormScreenState extends State<FishGroupFormScreen> {
   final _notes = TextEditingController();
   DateTime? _introducedAt;
   bool _saving = false;
+
+  /// Photo choisie dans ce formulaire, envoyée à l'enregistrement.
+  Uint8List? _photo;
 
   bool get _isEditing => widget.existing != null;
 
@@ -62,6 +68,18 @@ class _FishGroupFormScreenState extends State<FishGroupFormScreen> {
     if (picked != null && mounted) setState(() => _introducedAt = picked);
   }
 
+  Future<void> _pickPhoto() async {
+    final picked = await ImagePicker().pickImage(
+      source: ImageSource.gallery,
+      maxWidth: PhotoStore.maxSide.toDouble(),
+      maxHeight: PhotoStore.maxSide.toDouble(),
+      imageQuality: PhotoStore.pickQuality,
+    );
+    if (picked == null) return;
+    final bytes = await picked.readAsBytes();
+    if (mounted) setState(() => _photo = bytes);
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     final user = FirebaseAuth.instance.currentUser;
@@ -84,10 +102,18 @@ class _FishGroupFormScreenState extends State<FishGroupFormScreen> {
         notes: notes.isEmpty ? null : notes,
       );
 
-      final confirmed = await (_isEditing
-              ? FishGroupService.update(group)
-              : FishGroupService.create(group))
-          .confirmedWithin();
+      final photo = _photo;
+      final existing = widget.existing;
+      final Future<Object?> write = existing == null
+          ? FishGroupService.create(group, photo: photo)
+          : Future.wait([
+              FishGroupService.update(group),
+              if (photo != null) FishGroupService.setPhoto(existing, photo),
+            ]);
+      // Une photo pèse plusieurs centaines de kilo-octets : plus de patience.
+      final confirmed = await write.confirmedWithin(
+        Duration(seconds: photo == null ? 5 : 20),
+      );
       if (mounted) {
         _snack(
           !confirmed
@@ -175,6 +201,14 @@ class _FishGroupFormScreenState extends State<FishGroupFormScreen> {
           physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.all(AppSpacing.md),
           children: [
+            Center(
+              child: _GroupPhotoPicker(
+                picked: _photo,
+                imageUrl: widget.existing?.imageUrl,
+                onTap: _saving ? null : _pickPhoto,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.lg),
             const SectionLabel("Espèce"),
             const SizedBox(height: 12),
             TextFormField(
@@ -275,6 +309,77 @@ class _FishGroupFormScreenState extends State<FishGroupFormScreen> {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Photo du groupe, à toucher pour en choisir une : la nouvelle si elle
+/// vient d'être choisie, sinon celle du groupe, sinon l'icône des poissons.
+class _GroupPhotoPicker extends StatelessWidget {
+  final Uint8List? picked;
+  final String? imageUrl;
+  final VoidCallback? onTap;
+
+  const _GroupPhotoPicker({
+    required this.picked,
+    required this.imageUrl,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = context.colors;
+    final ImageProvider? image = picked != null
+        ? MemoryImage(picked!)
+        : imageUrl != null
+        ? photoImage(imageUrl!, width: 360)
+        : null;
+    final hasPhoto = image != null;
+
+    return Semantics(
+      button: true,
+      label: hasPhoto ? "Changer la photo du groupe" : "Ajouter une photo du groupe",
+      child: GestureDetector(
+        onTap: onTap,
+        child: Column(
+          children: [
+            Stack(
+              children: [
+                CircleAvatar(
+                  radius: 46,
+                  backgroundColor: colors.primaryContainer,
+                  backgroundImage: image,
+                  child: hasPhoto
+                      ? null
+                      : Icon(
+                          Icons.groups_rounded,
+                          size: 40,
+                          color: colors.onPrimaryContainer,
+                        ),
+                ),
+                const Positioned(
+                  bottom: 0,
+                  right: 0,
+                  child: CircleAvatar(
+                    radius: 16,
+                    backgroundColor: AppPalette.hi,
+                    child: Icon(
+                      Icons.camera_alt_rounded,
+                      size: 15,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            Text(
+              hasPhoto ? "Changer la photo" : "Ajouter une photo",
+              style: context.texts.labelLarge?.copyWith(color: colors.primary),
+            ),
           ],
         ),
       ),

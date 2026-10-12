@@ -180,6 +180,20 @@ remettre l'icône : une PWA installée garde son propre cache.
 
 Un vrai build iOS (`.ipa`, TestFlight, App Store) exige macOS et Xcode.
 
+## Publier une mise à jour
+
+L'appli est en ligne sur Google Play. Chaque modification visible est notée
+dans [CHANGELOG.md](CHANGELOG.md), sous « À venir », au fil de l'eau.
+
+1. Dans `pubspec.yaml`, augmenter `version` : le nom (2.0.1…) et le numéro
+   après le `+`, toujours plus grand que le dernier envoyé — le Play Store
+   refuse un numéro déjà utilisé.
+2. `flutter build appbundle --release` →
+   `build/app/outputs/bundle/release/app-release.aab`.
+3. Play Console → Tests internes : nouvelle version avec les notes prêtes du
+   journal, vérification sur un appareil, puis promotion en production.
+4. Dans le journal, « À venir » prend le numéro publié.
+
 ## Tests
 
 ```bash

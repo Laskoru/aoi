@@ -18,11 +18,22 @@ class FishGroupService {
         .map((snap) => snap.docs.map(FishGroup.fromFirestore).toList());
   }
 
-  static Future<void> create(FishGroup group) {
-    return _collection.add({
+  /// Crée un groupe, avec sa photo s'il y en a une : la fiche et l'image
+  /// partent dans un seul lot, jamais l'une sans l'autre.
+  static Future<void> create(FishGroup group, {Uint8List? photo}) async {
+    final batch = FirebaseFirestore.instance.batch();
+    String? imageUrl;
+    if (photo != null) {
+      final prepared = await PhotoStore.prepare(group.userId, photo);
+      prepared.addTo(batch);
+      imageUrl = prepared.ref;
+    }
+    batch.set(_collection.doc(), {
       ...group.toMap(),
+      'imageUrl': imageUrl,
       'createdAt': FieldValue.serverTimestamp(),
     });
+    await batch.commit();
   }
 
   /// Met à jour la fiche, sans toucher à sa photo : seul [setPhoto] la
