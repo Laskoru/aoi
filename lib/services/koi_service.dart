@@ -14,19 +14,21 @@ class KoiService {
   /// Crée une fiche et l'horodate.
   ///
   /// La taille saisie ouvre la courbe de croissance : sans ce premier point,
-  /// la fiche annoncerait une taille que l'historique ignore.
+  /// la fiche annoncerait une taille que l'historique ignore. Fiche et mesure
+  /// partent dans un seul lot : deux écritures séparées échouaient parfois
+  /// (mesure refusée car traitée avant la fiche) et laissaient un koï créé
+  /// malgré le message d'erreur, donc un doublon au second essai.
   static Future<void> create(Koi koi) {
     final ref = _collection.doc();
-    return Future.wait<Object?>([
-      ref.set({...koi.toMap(), 'createdAt': FieldValue.serverTimestamp()}),
-      // Envoyé après la fiche, dans l'ordre des écritures : les règles
-      // exigent que le koï existe déjà.
-      if (koi.size > 0)
-        ref.collection('growth').add({
-          'size': koi.size,
-          'timestamp': FieldValue.serverTimestamp(),
-        }),
-    ]);
+    final batch = FirebaseFirestore.instance.batch();
+    batch.set(ref, {...koi.toMap(), 'createdAt': FieldValue.serverTimestamp()});
+    if (koi.size > 0) {
+      batch.set(ref.collection('growth').doc(), {
+        'size': koi.size,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    }
+    return batch.commit();
   }
 
   /// Met à jour une fiche existante.

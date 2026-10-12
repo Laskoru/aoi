@@ -13,13 +13,25 @@ comprises).
   poissons rouges…) peut avoir sa photo. On la choisit en touchant la photo
   ronde en haut du formulaire, dès la création du groupe ou en le modifiant.
 
+### Corrections
+- **Ajout d'un koï** : l'enregistrement pouvait échouer au premier essai
+  (« permission denied ») alors que la fiche était bel et bien créée, et le
+  second essai la créait une deuxième fois. Sur Android, la fiche et sa
+  première mesure de taille partaient en deux écritures dont l'ordre
+  d'arrivée n'est pas garanti ; elles partent désormais en un seul lot.
+
 ### En coulisses (hors notes Play)
 - Configuration Android à jour avec la clé de signature de Google Play.
+- Règles Firestore : la première mesure de taille est acceptée dans le même
+  lot que la création du koï. **À déployer avant de publier la 2.0.1**
+  (`firebase deploy --only firestore:rules`) : sans elles, tout ajout de koï
+  serait refusé. Elles ne changent rien pour la 2.0.0.
 
 ### Notes Play prêtes à coller
 ```
 <fr-FR>
 Nouveau : ajoutez une photo à vos autres habitants (ides, esturgeons, poissons rouges…), dès la création du groupe ou en le modifiant.
+Corrigé : l'ajout d'un koï pouvait échouer au premier essai et créer un doublon.
 </fr-FR>
 ```
 

@@ -18,7 +18,7 @@ import {
 } from '@firebase/rules-unit-testing';
 import {
   Bytes, Timestamp, addDoc, collection, deleteDoc, doc, getDoc, getDocs,
-  query, serverTimestamp, setDoc, updateDoc, where,
+  query, serverTimestamp, setDoc, updateDoc, where, writeBatch,
 } from 'firebase/firestore';
 
 const rules = readFileSync(new URL('../../firestore.rules', import.meta.url), 'utf8');
@@ -109,6 +109,14 @@ describe("sous-collections d'un koï", () => {
     assertSucceeds(addDoc(collection(alice, 'kois/k1/growth'), { size: 70, timestamp: serverTimestamp() })));
   test('croissance : une taille hors bornes est refusée', () =>
     assertFails(addDoc(collection(alice, 'kois/k1/growth'), { size: 250 })));
+  test('croissance : un koï neuf et sa première mesure partent dans le même lot', () => {
+    const batch = writeBatch(alice);
+    batch.set(doc(alice, 'kois/k3'), { userId: 'alice', name: 'Mizu', size: 22 });
+    batch.set(doc(alice, 'kois/k3/growth/g1'), { size: 22, timestamp: serverTimestamp() });
+    return assertSucceeds(batch.commit());
+  });
+  test("croissance : pas de mesure sous un koï qui n'existe pas", () =>
+    assertFails(setDoc(doc(alice, 'kois/absent/growth/g1'), { size: 20 })));
   test('galerie : une référence photo sans storagePath est acceptée', () =>
     assertSucceeds(addDoc(collection(alice, 'kois/k1/photos'), { url: 'photo:p1', takenAt: serverTimestamp() })));
   test("galerie : un koï absent n'a pas de galerie", () =>

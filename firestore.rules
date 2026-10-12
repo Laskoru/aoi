@@ -78,8 +78,18 @@ service cloud.firestore {
               && parentKoi().userId == request.auth.uid;
         }
 
+        // À la création, le koï est lu tel qu'il sera après l'écriture : une
+        // fiche neuve et sa première mesure partent dans le même lot, et le
+        // koï n'existe pas encore avant. Deux écritures séparées ne suffisent
+        // pas : le serveur ne garantit pas de traiter la fiche en premier.
+        function ownsParentKoiAfter() {
+          return isSignedIn()
+              && existsAfter(/databases/$(database)/documents/kois/$(koiId))
+              && getAfter(/databases/$(database)/documents/kois/$(koiId)).data.userId == request.auth.uid;
+        }
+
         allow read:   if ownsParentKoi();
-        allow create: if ownsParentKoi()
+        allow create: if ownsParentKoiAfter()
                       && request.resource.data.size is number
                       && request.resource.data.size >= 0
                       && request.resource.data.size <= 200;
