@@ -5,6 +5,9 @@ import '../../theme/app_palette.dart';
 import '../../theme/app_widgets.dart';
 import '../../widgets/privacy_policy_link.dart';
 
+/// Les services de connexion proposés.
+enum _Provider { apple, google }
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -13,23 +16,27 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  bool _isSigningIn = false;
+  /// Le service dont la fenêtre est ouverte, null au repos.
+  _Provider? _signingIn;
   String? _errorMessage;
 
-  Future<void> _signIn() async {
+  Future<void> _signIn(_Provider provider) async {
     setState(() {
-      _isSigningIn = true;
+      _signingIn = provider;
       _errorMessage = null;
     });
 
     try {
-      await AuthService.signInWithGoogle();
+      await switch (provider) {
+        _Provider.apple => AuthService.signInWithApple(),
+        _Provider.google => AuthService.signInWithGoogle(),
+      };
       // Pas de navigation ici : l'AuthGate de main.dart écoute
       // authStateChanges et bascule seul sur le tableau de bord.
     } on FirebaseAuthException catch (e) {
       debugPrint('[AOI] Échec de connexion Firebase : ${e.code} — ${e.message}');
-      // Refermer la fenêtre Google est un choix de l'utilisateur, pas une
-      // panne : inutile de lui afficher une erreur.
+      // Refermer la fenêtre Google ou Apple est un choix de l'utilisateur,
+      // pas une panne : inutile de lui afficher une erreur.
       if (!_isUserCancellation(e.code)) {
         setState(() => _errorMessage = _messageFor(e.code));
       }
@@ -37,14 +44,15 @@ class _LoginScreenState extends State<LoginScreen> {
       debugPrint('[AOI] Échec de connexion : $e');
       setState(() => _errorMessage = "La connexion a échoué. Réessayez.");
     } finally {
-      if (mounted) setState(() => _isSigningIn = false);
+      if (mounted) setState(() => _signingIn = null);
     }
   }
 
   bool _isUserCancellation(String code) {
     return code == 'popup-closed-by-user' ||
         code == 'cancelled-popup-request' ||
-        code == 'user-cancelled';
+        code == 'user-cancelled' ||
+        code == 'canceled';
   }
 
   String _messageFor(String code) {
@@ -52,7 +60,8 @@ class _LoginScreenState extends State<LoginScreen> {
       'network-request-failed' =>
         "Connexion impossible : vérifiez votre accès à Internet.",
       'account-exists-with-different-credential' =>
-        "Un compte existe déjà avec cette adresse, via un autre mode de connexion.",
+        "Un compte existe déjà avec cette adresse : connectez-vous comme la "
+            "première fois, avec Google ou avec Apple.",
       'unauthorized-domain' =>
         "Ce domaine n'est pas autorisé dans la console Firebase.",
       _ => "La connexion a échoué. Réessayez.",
@@ -105,33 +114,23 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 56),
 
-                    SizedBox(
-                      width: double.infinity,
-                      height: 54,
-                      child: ElevatedButton.icon(
-                        icon: _isSigningIn
-                            ? const SizedBox.shrink()
-                            : const Icon(Icons.login_rounded, size: 20),
-                        label: _isSigningIn
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: AppPalette.mizuDeep,
-                                ),
-                              )
-                            : const Text("Se connecter avec Google"),
-                        onPressed: _isSigningIn ? null : _signIn,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: AppPalette.mizuDeep,
-                          disabledBackgroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(AppRadius.field),
-                          ),
-                        ),
+                    // Apple d'abord, aussi visible que Google : c'est ce
+                    // que l'App Store attend. Son style blanc, logo et texte
+                    // noirs, est celui qu'il prévoit pour les fonds sombres.
+                    if (AuthService.offersApple) ...[
+                      _buildSignInButton(
+                        provider: _Provider.apple,
+                        icon: Icons.apple,
+                        label: "Se connecter avec Apple",
+                        color: Colors.black,
                       ),
+                      const SizedBox(height: 12),
+                    ],
+                    _buildSignInButton(
+                      provider: _Provider.google,
+                      icon: Icons.login_rounded,
+                      label: "Se connecter avec Google",
+                      color: AppPalette.mizuDeep,
                     ),
 
                     if (_errorMessage != null) ...[
@@ -147,6 +146,38 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSignInButton({
+    required _Provider provider,
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    final busy = _signingIn == provider;
+    return SizedBox(
+      width: double.infinity,
+      height: 54,
+      child: ElevatedButton.icon(
+        icon: busy ? const SizedBox.shrink() : Icon(icon, size: 20),
+        label: busy
+            ? SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2, color: color),
+              )
+            : Text(label),
+        onPressed: _signingIn != null ? null : () => _signIn(provider),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.white,
+          foregroundColor: color,
+          disabledBackgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.field),
           ),
         ),
       ),

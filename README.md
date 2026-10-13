@@ -198,6 +198,23 @@ dans [CHANGELOG.md](CHANGELOG.md), sous « À venir », au fil de l'eau.
    journal, vérification sur un appareil, puis promotion en production.
 5. Dans le journal, « À venir » prend le numéro publié.
 
+## Version iPhone
+
+Compilée chez [Codemagic](https://codemagic.io), faute de Mac : voir
+`codemagic.yaml`, dont chaque workflow se lance à la main.
+
+- **ios-verification** compile sans signer, sans compte Apple. À lancer après
+  toute modification du projet iOS.
+- **ios-testflight** compile, signe et envoie sur TestFlight. Il faut le
+  compte Apple Developer, l'appli créée dans App Store Connect (identifiant
+  `fr.aoikoi.app`) et la clé d'API App Store Connect enregistrée dans
+  Codemagic sous le nom « AOI KOI ».
+
+Sur iPhone, l'App Store exige « Se connecter avec Apple » à côté de Google.
+Pour que la suppression du compte coupe aussi l'accès Apple, la connexion
+Apple de Firebase doit connaître la clé « Sign in with Apple » du compte
+développeur (Team ID, Key ID et clé privée).
+
 ## Tests
 
 ```bash

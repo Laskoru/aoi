@@ -174,6 +174,9 @@ class KoiDetailScreen extends StatelessWidget {
   Future<void> _addPhoto(BuildContext context, Koi koi) async {
     final XFile? pickedFile = await ImagePicker().pickImage(
       source: ImageSource.gallery,
+      // Sans les métadonnées, dont l'appli n'a pas l'usage : iOS n'a alors pas
+      // à demander l'accès à toute la photothèque.
+      requestFullMetadata: false,
       maxWidth: PhotoStore.maxSide.toDouble(),
       maxHeight: PhotoStore.maxSide.toDouble(),
       imageQuality: PhotoStore.pickQuality,

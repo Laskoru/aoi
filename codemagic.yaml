@@ -1,0 +1,66 @@
+# Compilation de l'appli iPhone chez Codemagic : ses Mac compilent, signent
+# et envoient l'appli à Apple, sans Mac sur place.
+#
+# Chaque workflow se lance à la main depuis codemagic.io (Start new build),
+# sur la branche choisie : aucun ne part tout seul, pour ne pas dépenser les
+# minutes gratuites.
+#
+# - ios-verification : compile sans signer, pour vérifier que le projet iOS
+#   tient debout. Ne demande aucun compte Apple.
+# - ios-testflight : compile, signe et envoie sur TestFlight. Demande le
+#   compte Apple Developer, et la clé d'API App Store Connect enregistrée dans
+#   Codemagic sous le nom « AOI KOI ».
+
+workflows:
+  ios-verification:
+    name: iOS — vérification sans signature
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      flutter: 3.47.0
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Dépendances
+        script: flutter pub get
+      - name: Tests
+        script: flutter test
+      - name: Compilation iOS
+        script: flutter build ios --release --no-codesign
+
+  ios-testflight:
+    name: iOS — envoi sur TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      app_store_connect: AOI KOI
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: fr.aoikoi.app
+      vars:
+        # Identifiant Apple de l'appli, en chiffres : App Store Connect →
+        # l'appli → Informations sur l'app → Identifiant Apple.
+        APP_STORE_APPLE_ID: "0"
+      flutter: 3.47.0
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Profils de signature
+        script: xcode-project use-profiles
+      - name: Dépendances
+        script: flutter pub get
+      - name: Compilation de l'IPA
+        script: |
+          # TestFlight refuse un numéro déjà envoyé : on prend le suivant.
+          LATEST=$(app-store-connect get-latest-testflight-build-number "$APP_STORE_APPLE_ID" 2>/dev/null || echo 0)
+          flutter build ipa --release \
+            --build-number=$((LATEST + 1)) \
+            --export-options-plist=/Users/builder/export_options.plist
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true

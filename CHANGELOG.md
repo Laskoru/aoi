@@ -6,6 +6,18 @@ prend le numéro de la version, et ses nouveautés deviennent les notes de
 version de la Play Console (500 caractères au plus, balises `<fr-FR>`
 comprises).
 
+## À venir
+
+### En coulisses (hors notes Play)
+- Version iPhone en préparation : « Se connecter avec Apple », proposé sur
+  iPhone seulement et exigé par l'App Store à côté de Google ; réglages iOS
+  (identifiant `fr.aoikoi.app`, iOS 15 minimum, iPhone seulement, textes
+  d'autorisation pour les photos) ; compilation chez Codemagic
+  (`codemagic.yaml`). Rien ne change sur Android.
+- Choix d'une photo : ses métadonnées ne sont plus demandées, l'appli les
+  efface de toute façon. Sur iPhone, plus de demande d'accès à toute la
+  photothèque.
+
 ## 2.0.1 (9) — octobre 2026
 
 ### Nouveautés

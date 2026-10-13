@@ -111,16 +111,18 @@ Future<void> startAccountDeletion(BuildContext context) async {
 bool _isCancellation(String code) {
   return code == 'popup-closed-by-user' ||
       code == 'cancelled-popup-request' ||
-      code == 'user-cancelled';
+      code == 'user-cancelled' ||
+      code == 'canceled';
 }
 
 String _identityMessage(String code) {
+  final provider = AuthService.providerLabel;
   return switch (code) {
     'user-mismatch' =>
-      "Ce n'est pas le compte Google connecté. Choisissez le même compte. "
+      "Ce n'est pas le compte $provider connecté. Choisissez le même compte. "
           "Rien n'a été supprimé.",
     'popup-blocked' || 'operation-not-supported-in-this-environment' =>
-      "La fenêtre Google n'a pas pu s'ouvrir. Déconnectez-vous, "
+      "La fenêtre $provider n'a pas pu s'ouvrir. Déconnectez-vous, "
           "reconnectez-vous, puis relancez la suppression dans les cinq minutes.",
     'network-request-failed' =>
       "Pas de connexion à Internet. Rien n'a été supprimé.",
@@ -169,7 +171,8 @@ class _ConfirmDeletionDialogState extends State<_ConfirmDeletionDialog> {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              "Google vous demandera peut-être de confirmer votre identité.",
+              "${AuthService.providerLabel} vous demandera peut-être de "
+              "confirmer votre identité.",
               style: context.texts.bodyMedium,
             ),
             const SizedBox(height: AppSpacing.md),

@@ -72,6 +72,9 @@ class _FishGroupFormScreenState extends State<FishGroupFormScreen> {
   Future<void> _pickPhoto() async {
     final picked = await ImagePicker().pickImage(
       source: ImageSource.gallery,
+      // Sans les métadonnées, dont l'appli n'a pas l'usage : iOS n'a alors pas
+      // à demander l'accès à toute la photothèque.
+      requestFullMetadata: false,
       maxWidth: PhotoStore.maxSide.toDouble(),
       maxHeight: PhotoStore.maxSide.toDouble(),
       imageQuality: PhotoStore.pickQuality,

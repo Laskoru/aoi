@@ -19,6 +19,14 @@ class AppConfig {
         '144445288274-m1tccaibpjgj3dtrq6hobeh9qocag4pr.apps.googleusercontent.com',
   );
 
+  /// Client OAuth « iOS » du projet Firebase, pour Google Sign-In sur iPhone.
+  /// Il naît avec l'appli iOS déclarée dans Firebase : c'est le champ
+  /// CLIENT_ID de GoogleService-Info.plist. Vide tant qu'elle ne l'est pas.
+  static const String googleIosClientId = String.fromEnvironment(
+    'GOOGLE_IOS_CLIENT_ID',
+    defaultValue: '',
+  );
+
   /// Politique de confidentialité publiée : la même adresse que celle
   /// déclarée dans la Play Console, qui exige aussi un lien dans l'appli.
   static final Uri privacyPolicyUrl =

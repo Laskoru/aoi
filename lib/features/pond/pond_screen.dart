@@ -190,6 +190,9 @@ class _PondMenu extends StatelessWidget {
   Future<void> _pickPhoto(BuildContext context) async {
     final XFile? picked = await ImagePicker().pickImage(
       source: ImageSource.gallery,
+      // Sans les métadonnées, dont l'appli n'a pas l'usage : iOS n'a alors pas
+      // à demander l'accès à toute la photothèque.
+      requestFullMetadata: false,
       imageQuality: 75,
       maxWidth: 2000,
       maxHeight: 2000,
