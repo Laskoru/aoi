@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/l10n.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:image_picker/image_picker.dart';
@@ -62,9 +63,9 @@ class _FishGroupFormScreenState extends State<FishGroupFormScreen> {
       initialDate: _introducedAt ?? now,
       firstDate: DateTime(1990),
       lastDate: now,
-      helpText: "Date d'introduction",
-      cancelText: 'Annuler',
-      confirmText: 'Valider',
+      helpText: context.l10n.fishFormDate,
+      cancelText: context.l10n.commonCancel,
+      confirmText: context.l10n.commonConfirm,
     );
     if (picked != null && mounted) setState(() => _introducedAt = picked);
   }
@@ -88,7 +89,7 @@ class _FishGroupFormScreenState extends State<FishGroupFormScreen> {
     if (!_formKey.currentState!.validateAndReveal()) return;
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      _snack('Session expirée, reconnectez-vous.');
+      _snack(context.l10n.sessionExpiredSignIn);
       return;
     }
 
@@ -121,15 +122,15 @@ class _FishGroupFormScreenState extends State<FishGroupFormScreen> {
       if (mounted) {
         _snack(
           !confirmed
-              ? pendingWriteMessage
+              ? context.l10n.pendingWrite
               : _isEditing
-              ? 'Groupe mis à jour.'
-              : 'Groupe ajouté.',
+              ? context.l10n.fishUpdated
+              : context.l10n.fishAdded,
         );
         Navigator.pop(context);
       }
     } catch (e) {
-      if (mounted) _snack('Erreur lors de la sauvegarde : $e');
+      if (mounted) _snack(context.l10n.saveError(e));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -142,17 +143,17 @@ class _FishGroupFormScreenState extends State<FishGroupFormScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Supprimer ${group.species} ?'),
-        content: const Text("Le groupe et sa photo seront effacés."),
+        title: Text(context.l10n.fishDeleteTitle(group.species)),
+        content: Text(context.l10n.fishDeleteBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: context.pond.danger),
-            child: const Text('Supprimer'),
+            child: Text(context.l10n.commonDelete),
           ),
         ],
       ),
@@ -163,13 +164,15 @@ class _FishGroupFormScreenState extends State<FishGroupFormScreen> {
     try {
       final confirmed = await FishGroupService.delete(group).confirmedWithin();
       if (mounted) {
-        _snack(confirmed ? 'Groupe supprimé.' : pendingWriteMessage);
+        _snack(
+          confirmed ? context.l10n.fishDeleted : context.l10n.pendingWrite,
+        );
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
-        _snack('Suppression impossible : $e');
+        _snack(context.l10n.deleteError(e));
       }
     }
   }
@@ -182,7 +185,9 @@ class _FishGroupFormScreenState extends State<FishGroupFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _isEditing ? 'Modifier le groupe' : 'Ajouter des poissons',
+          _isEditing
+              ? context.l10n.fishFormTitleEdit
+              : context.l10n.fishFormTitleAdd,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -194,7 +199,7 @@ class _FishGroupFormScreenState extends State<FishGroupFormScreen> {
             IconButton(
               icon: const Icon(Icons.delete_outline_rounded),
               color: context.pond.danger,
-              tooltip: 'Supprimer ce groupe',
+              tooltip: context.l10n.fishDeleteTooltip,
               onPressed: _saving ? null : _confirmDelete,
             ),
         ],
@@ -212,58 +217,60 @@ class _FishGroupFormScreenState extends State<FishGroupFormScreen> {
               ),
             ),
             const SizedBox(height: AppSpacing.lg),
-            const SectionLabel("Espèce"),
+            SectionLabel(context.l10n.fishSectionSpecies),
             const SizedBox(height: 12),
             TextFormField(
               controller: _species,
               inputFormatters: [LengthLimitingTextInputFormatter(80)],
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Espèce (ex : Ide mélanote, Esturgeon)',
+              decoration: InputDecoration(
+                labelText: context.l10n.fishFormSpecies,
                 prefixIcon: Icon(Icons.groups_rounded, size: 20),
               ),
               validator: (v) => (v == null || v.trim().isEmpty)
-                  ? "Veuillez entrer l'espèce"
+                  ? context.l10n.fishFormSpeciesRequired
                   : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _count,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Effectif',
+              decoration: InputDecoration(
+                labelText: context.l10n.fishFormCount,
                 prefixIcon: Icon(Icons.numbers_rounded, size: 20),
               ),
               validator: (v) {
                 final n = int.tryParse((v ?? '').trim());
-                if (n == null || n < 1) return 'Au moins 1';
-                if (n > 10000) return 'Valeur irréaliste';
+                if (n == null || n < 1) return context.l10n.formAtLeastOne;
+                if (n > 10000) return context.l10n.formUnrealistic;
                 return null;
               },
             ),
 
             const SizedBox(height: AppSpacing.xl),
-            const SectionLabel("Introduction"),
+            SectionLabel(context.l10n.fishSectionIntroduction),
             const SizedBox(height: 12),
             InkWell(
               onTap: _pickDate,
               borderRadius: BorderRadius.circular(AppRadius.field),
               child: InputDecorator(
                 decoration: InputDecoration(
-                  labelText: "Date d'introduction",
+                  labelText: context.l10n.fishFormDate,
                   prefixIcon: const Icon(Icons.event_rounded, size: 20),
                   suffixIcon: _introducedAt != null
                       ? IconButton(
                           icon: const Icon(Icons.clear_rounded, size: 18),
-                          tooltip: 'Effacer la date',
+                          tooltip: context.l10n.koiFormClearDate,
                           onPressed: () => setState(() => _introducedAt = null),
                         )
                       : const Icon(Icons.calendar_month_rounded, size: 20),
                 ),
                 child: Text(
                   _introducedAt == null
-                      ? 'Non renseignée'
-                      : DateFormat('d MMMM yyyy', 'fr_FR').format(_introducedAt!),
+                      ? context.l10n.dateNotSet
+                      : DateFormat.yMMMMd(
+                          context.localeName,
+                        ).format(_introducedAt!),
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: _introducedAt == null
@@ -278,14 +285,14 @@ class _FishGroupFormScreenState extends State<FishGroupFormScreen> {
             ),
 
             const SizedBox(height: AppSpacing.xl),
-            const SectionLabel("Notes"),
+            SectionLabel(context.l10n.koiFormSectionNotes),
             const SizedBox(height: 12),
             TextFormField(
               controller: _notes,
               maxLength: 2000,
               maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Origine, comportement, pertes…',
+              decoration: InputDecoration(
+                labelText: context.l10n.fishFormNotesHint,
                 prefixIcon: Icon(Icons.sticky_note_2_rounded, size: 20),
               ),
             ),
@@ -306,8 +313,8 @@ class _FishGroupFormScreenState extends State<FishGroupFormScreen> {
                       )
                     : Text(
                         _isEditing
-                            ? 'Enregistrer les modifications'
-                            : 'Ajouter le groupe',
+                            ? context.l10n.formSaveChanges
+                            : context.l10n.fishFormSave,
                       ),
               ),
             ),
@@ -344,7 +351,7 @@ class _GroupPhotoPicker extends StatelessWidget {
 
     return Semantics(
       button: true,
-      label: hasPhoto ? "Changer la photo du groupe" : "Ajouter une photo du groupe",
+      label: hasPhoto ? context.l10n.fishChangePhoto : context.l10n.fishAddPhoto,
       child: GestureDetector(
         onTap: onTap,
         child: Column(
@@ -380,7 +387,7 @@ class _GroupPhotoPicker extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              hasPhoto ? "Changer la photo" : "Ajouter une photo",
+              hasPhoto ? context.l10n.changePhoto : context.l10n.addPhoto,
               style: context.texts.labelLarge?.copyWith(color: colors.primary),
             ),
           ],

@@ -1,0 +1,600 @@
+{
+  "@@locale": "fr",
+  "koiSexUnknown": "Indéterminé",
+  "koiSexMale": "Mâle",
+  "koiSexFemale": "Femelle",
+  "koiStatusAlive": "Vivant",
+  "koiStatusDeceased": "Décédé",
+  "koiStatusSold": "Vendu",
+  "koiStatusGiven": "Donné",
+  "ageUnknown": "Âge inconnu",
+  "ageLessThanAMonth": "Moins d'un mois",
+  "ageMonths": "{months, plural, =1{1 mois} other{{months} mois}}",
+  "@ageMonths": {
+    "placeholders": {
+      "months": {
+        "type": "int"
+      }
+    }
+  },
+  "ageYears": "{years, plural, =1{1 an} other{{years} ans}}",
+  "@ageYears": {
+    "placeholders": {
+      "years": {
+        "type": "int"
+      }
+    }
+  },
+  "ageApproxYears": "{years, plural, =1{~1 an} other{~{years} ans}}",
+  "@ageApproxYears": {
+    "description": "Âge approximatif des fiches anciennes, saisi en années.",
+    "placeholders": {
+      "years": {
+        "type": "int"
+      }
+    }
+  },
+  "ageYearsAndMonths": "{years} et {months}",
+  "@ageYearsAndMonths": {
+    "description": "Assemble ageYears et ageMonths : « 3 ans et 2 mois ».",
+    "placeholders": {
+      "years": {
+        "type": "String"
+      },
+      "months": {
+        "type": "String"
+      }
+    }
+  },
+  "yearClassOver": "Plus de {count} ans",
+  "@yearClassOver": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "plantZoneBerge": "Berge",
+  "plantZoneMarecage": "Marécage",
+  "plantZoneImmergee": "Immergée",
+  "plantZoneProfonde": "Profonde",
+  "plantZoneBergeDescription": "Sol humide, jamais immergé : carex, joncs, iris des marais.",
+  "plantZoneMarecageDescription": "De 0 à 20 cm d'eau : iris, sagittaires, cyperus.",
+  "plantZoneImmergeeDescription": "De 20 à 40 cm : plantes émergées, racines sous l'eau.",
+  "plantZoneProfondeDescription": "De 40 cm à 1 m : nénuphars et plantes oxygénantes.",
+  "waterPh": "pH",
+  "waterTemperature": "Température",
+  "waterAmmonia": "Ammoniaque",
+  "waterNitrite": "Nitrites",
+  "waterNitrate": "Nitrates",
+  "waterKh": "KH",
+  "waterGh": "GH",
+  "waterPhExplanation": "Un pH instable stresse les koï et rend l'ammoniaque plus toxique.",
+  "waterTemperatureExplanation": "Sous 10 °C les koï ralentissent ; au-dessus de 28 °C l'eau manque d'oxygène.",
+  "waterAmmoniaExplanation": "L'ammoniaque brûle les branchies. Sa présence signale un filtre débordé.",
+  "waterNitriteExplanation": "Les nitrites asphyxient les koï en bloquant le transport de l'oxygène.",
+  "waterNitrateExplanation": "Les nitrates s'accumulent lentement. Ils se corrigent par des changements d'eau.",
+  "waterKhExplanation": "Le KH tamponne le pH. Trop bas, le pH peut s'effondrer d'un coup.",
+  "waterGhExplanation": "Le GH mesure la dureté générale, qui soutient l'osmorégulation des koï.",
+  "waterReadingSummary": "{parameter} : {value} {unit}",
+  "@waterReadingSummary": {
+    "description": "Une valeur relevée dans le bandeau : « Nitrites : 0.15 mg/L ». L'unité peut être vide (pH).",
+    "placeholders": {
+      "parameter": {
+        "type": "String"
+      },
+      "value": {
+        "type": "String"
+      },
+      "unit": {
+        "type": "String"
+      }
+    }
+  },
+  "waterConditionIdeal": "SAIN",
+  "@waterConditionIdeal": {
+    "description": "Badge d'un paramètre dans sa plage, en capitales."
+  },
+  "waterConditionWarning": "ALERTE",
+  "@waterConditionWarning": {
+    "description": "Badge d'un paramètre un peu hors plage, en capitales."
+  },
+  "waterConditionDanger": "DANGER",
+  "@waterConditionDanger": {
+    "description": "Badge d'un paramètre hors plage, en capitales."
+  },
+  "waterSummaryIdeal": "Eau saine",
+  "waterSummaryWarning": "Eau à surveiller",
+  "waterSummaryDanger": "Eau en danger",
+  "waterAdviceIdeal": "Les paramètres relevés sont dans la bonne plage.",
+  "waterAdviceWarning": "Un paramètre s'écarte de la plage idéale. À surveiller.",
+  "waterAdviceDanger": "Un paramètre est hors plage. Intervenez sans attendre.",
+  "pendingWrite": "Enregistré sur l'appareil : l'envoi se fera au retour du réseau.",
+  "commonCancel": "Annuler",
+  "commonConfirm": "Valider",
+  "commonDelete": "Supprimer",
+  "sessionExpired": "Session expirée",
+  "sessionExpiredSignIn": "Session expirée, reconnectez-vous.",
+  "saveError": "Erreur lors de la sauvegarde : {error}",
+  "@saveError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "deleteError": "Suppression impossible : {error}",
+  "@deleteError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "formNameRequired": "Veuillez entrer un nom",
+  "formRequired": "Obligatoire",
+  "formSaveChanges": "Enregistrer les modifications",
+  "dateNotSet": "Non renseignée",
+  "@dateNotSet": {
+    "description": "Date absente (féminin en français)."
+  },
+  "koiFormBirthDateHelp": "Date de naissance du koï",
+  "koiFormBirthDate": "Date de naissance",
+  "koiUpdated": "Fiche mise à jour.",
+  "koiAdded": "Carpe koï ajoutée.",
+  "koiDeleteTitle": "Supprimer {name} ?",
+  "@koiDeleteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "koiDeleteBody": "La fiche, son historique de croissance et sa photo seront effacés définitivement.\n\nLes koï qui la désignent comme parent garderont la trace d'une filiation, marquée comme introuvable.",
+  "koiDeleted": "{name} a été supprimé.",
+  "@koiDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "koiFormTitleEdit": "Modifier la fiche",
+  "koiFormTitleAdd": "Ajouter un koï",
+  "koiDeleteTooltip": "Supprimer ce koï",
+  "koiFormSectionBasics": "Informations de base",
+  "koiFormName": "Nom du koï",
+  "koiFormVariety": "Variété (ex : Kohaku)",
+  "koiFormVarietyRequired": "Veuillez entrer une variété",
+  "koiFormSize": "Taille (cm)",
+  "koiFormSizeInvalid": "Taille invalide",
+  "koiFormSizeUnrealistic": "Taille irréaliste",
+  "koiFormSectionIdentity": "Naissance & identité",
+  "koiFormSex": "Sexe",
+  "koiFormStatus": "Statut",
+  "koiFormBreeder": "Éleveur (optionnel)",
+  "koiFormOrigin": "Provenance (optionnel)",
+  "koiFormSectionLineage": "Généalogie & origines",
+  "koiFormSectionNotes": "Notes",
+  "koiFormNotesHint": "Observations, particularités…",
+  "koiFormSave": "Sauvegarder la carpe",
+  "koiFormClearDate": "Effacer la date",
+  "koiFather": "Père",
+  "koiMother": "Mère",
+  "koiFatherManual": "Nom / variété du père",
+  "koiMotherManual": "Nom / variété de la mère",
+  "parentNotSet": "Non renseigné",
+  "@parentNotSet": {
+    "description": "Parent absent (masculin en français)."
+  },
+  "parentManual": "Saisie manuelle / autre origine",
+  "koiUnnamed": "Sans nom",
+  "errorDetail": "Erreur : {error}",
+  "@errorDetail": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "koiNotFound": "Ce koï n'existe plus.",
+  "koiSectionGallery": "Galerie",
+  "koiSectionIdentity": "Identité",
+  "koiSectionOrigin": "Provenance",
+  "koiSectionLineage": "Généalogie",
+  "koiSectionGrowth": "Croissance",
+  "photoUploading": "Envoi de la photo…",
+  "koiPhotoAdded": "Photo ajoutée à la galerie.",
+  "uploadError": "Erreur lors du transfert : {error}",
+  "@uploadError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "koiListTitle": "Mes koï",
+  "koiListEmptyTitle": "Votre collection est vide",
+  "koiListEmptyMessage": "Ajoutez vos premières carpes koï pour suivre leur croissance et leur lignée.",
+  "parentManualShort": "Saisie manuelle",
+  "parentUnknown": "Inconnu",
+  "parentNotFound": "Introuvable",
+  "loading": "Chargement",
+  "varietyUnknown": "Variété inconnue",
+  "koiLastSize": "Dernière taille mesurée",
+  "koiMeasure": "Mesurer",
+  "koiGrowthEmpty": "Enregistrez une mesure pour tracer la courbe de croissance.",
+  "addPhoto": "Ajouter une photo",
+  "koiVariety": "Variété",
+  "koiAge": "Âge",
+  "koiBirthDateMissing": "Date de naissance à renseigner",
+  "koiBornOn": "Né le {date}",
+  "@koiBornOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "koiAgeApprox": "Âge approximatif repris de l'ancienne fiche",
+  "tapToAdd": "Appuyez pour l'ajouter",
+  "koiYearClass": "Classe d'âge : {yearClass}",
+  "@koiYearClass": {
+    "placeholders": {
+      "yearClass": {
+        "type": "String"
+      }
+    }
+  },
+  "koiBirthDateOf": "Date de naissance de {name}",
+  "@koiBirthDateOf": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "commonSave": "Enregistrer",
+  "koiBirthDateError": "Impossible d'enregistrer la date : {error}",
+  "@koiBirthDateError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "koiBreeder": "Éleveur",
+  "commonAdd": "Ajouter",
+  "photoMain": "Photo principale",
+  "photo": "Photo",
+  "photoMainBadge": "PRINCIPALE",
+  "@photoMainBadge": {
+    "description": "Badge sur la photo principale, en capitales."
+  },
+  "commonClose": "Fermer",
+  "photoSetMain": "Définir comme principale",
+  "updateError": "Modification impossible : {error}",
+  "@updateError": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "photoDeleteTitle": "Supprimer cette photo ?",
+  "photoDeleteBody": "Le cliché sera définitivement effacé.",
+  "sizeInvalidCm": "Entrez une taille valide, en centimètres.",
+  "saveImpossible": "Enregistrement impossible : {error}",
+  "@saveImpossible": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "koiUpdateSize": "Mettre à jour la taille",
+  "koiUpdateSizeHint": "Elle sera ajoutée à la courbe de croissance.",
+  "koiNewSize": "Nouvelle taille",
+  "koiConfirmMeasure": "Confirmer la mesure",
+  "plantNotFound": "Cette plante n'existe plus.",
+  "plantFormTitleEdit": "Modifier la plante",
+  "plantFormTitleAdd": "Ajouter une plante",
+  "plantSectionPlanting": "Plantation",
+  "plantZone": "Zone",
+  "plantQuantity": "Quantité",
+  "plantPlanted": "Plantée",
+  "plantDepth": "Profondeur",
+  "photoUpdated": "Photo mise à jour.",
+  "changePhoto": "Changer la photo",
+  "plantFloatingBadge": "FLOTTANTE",
+  "@plantFloatingBadge": {
+    "description": "Badge en capitales."
+  },
+  "plantOxygenatingBadge": "OXYGÉNANTE",
+  "@plantOxygenatingBadge": {
+    "description": "Badge en capitales."
+  },
+  "plantFormDate": "Date de plantation",
+  "plantUpdated": "Plante mise à jour.",
+  "plantAdded": "Plante ajoutée.",
+  "plantDeleteTitle": "Supprimer {name} ?",
+  "@plantDeleteTitle": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "plantDeleteBody": "La fiche et sa photo seront effacées.",
+  "plantDeleted": "{name} a été supprimée.",
+  "@plantDeleted": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "plantDeleteTooltip": "Supprimer cette plante",
+  "plantFormName": "Nom (ex : Nénuphar rose)",
+  "plantFormSpecies": "Espèce ou variété (optionnel)",
+  "plantFormQuantity": "Nombre de pots ou de pieds",
+  "formAtLeastOne": "Au moins 1",
+  "formUnrealistic": "Valeur irréaliste",
+  "plantSectionZone": "Zone de plantation",
+  "plantFloating": "Flottante",
+  "plantFloatingHint": "Non enracinée : elle ombrage l'eau et abrite les alevins.",
+  "plantOxygenating": "Oxygénante",
+  "plantOxygenatingHint": "Immergée : elle consomme les nitrates et produit l'oxygène.",
+  "plantFormNotesHint": "Division, engrais, hivernage…",
+  "plantFormSave": "Ajouter la plante",
+  "plantZoneUpTo": "{zone} · jusqu'à {depth} cm",
+  "@plantZoneUpTo": {
+    "placeholders": {
+      "zone": {
+        "type": "String"
+      },
+      "depth": {
+        "type": "int"
+      }
+    }
+  },
+  "plantListTitle": "Plantes",
+  "plantListEmptyTitle": "Aucune plante",
+  "plantListEmptyMessage": "Nénuphars, iris, oxygénantes… Notez ce que vous plantez, où, et quand.",
+  "pondSeeAll": "Voir tout",
+  "pondOtherFish": "Autres habitants",
+  "pondNewReading": "Nouvelle mesure",
+  "pondPhotoUpdated": "Photo du bassin mise à jour.",
+  "pondPhotoRemoved": "Photo retirée : retour à l'eau.",
+  "pondOptions": "Options du bassin",
+  "pondEdit": "Modifier le bassin",
+  "pondAddPhoto": "Ajouter une photo du bassin",
+  "pondRemovePhoto": "Retirer la photo, revenir à l'eau",
+  "pondDepthCm": "{depth} cm de profondeur",
+  "@pondDepthCm": {
+    "placeholders": {
+      "depth": {
+        "type": "String"
+      }
+    }
+  },
+  "pondWelcome": "Bienvenue dans votre écosystème,",
+  "pondDefaultName": "Mon bassin",
+  "pondNoReading": "AUCUN RELEVÉ",
+  "@pondNoReading": {
+    "description": "Pastille en capitales."
+  },
+  "formInvalidValue": "Valeur invalide",
+  "pondFormName": "Nom du bassin",
+  "pondSectionDimensions": "Dimensions",
+  "pondFormVolume": "Volume (L)",
+  "pondFormDepth": "Profondeur (cm)",
+  "pondFormNotesHint": "Filtration, exposition, historique…",
+  "fishFormDate": "Date d'introduction",
+  "fishUpdated": "Groupe mis à jour.",
+  "fishAdded": "Groupe ajouté.",
+  "fishDeleteTitle": "Supprimer {species} ?",
+  "@fishDeleteTitle": {
+    "placeholders": {
+      "species": {
+        "type": "String"
+      }
+    }
+  },
+  "fishDeleteBody": "Le groupe et sa photo seront effacés.",
+  "fishDeleted": "Groupe supprimé.",
+  "fishFormTitleEdit": "Modifier le groupe",
+  "fishFormTitleAdd": "Ajouter des poissons",
+  "fishDeleteTooltip": "Supprimer ce groupe",
+  "fishSectionSpecies": "Espèce",
+  "fishFormSpecies": "Espèce (ex : Ide mélanote, Esturgeon)",
+  "fishFormSpeciesRequired": "Veuillez entrer l'espèce",
+  "fishFormCount": "Effectif",
+  "fishSectionIntroduction": "Introduction",
+  "fishFormNotesHint": "Origine, comportement, pertes…",
+  "fishFormSave": "Ajouter le groupe",
+  "fishChangePhoto": "Changer la photo du groupe",
+  "fishAddPhoto": "Ajouter une photo du groupe",
+  "fishEmptyTitle": "Aucun autre habitant",
+  "fishEmptyMessage": "Esturgeons, ides, carassins… Notez les espèces qui partagent le bassin avec vos koï.",
+  "fishSummary": "{fish, plural, one{{fish} poisson} other{{fish} poissons}} en {groups, plural, one{{groups} groupe} other{{groups} groupes}}",
+  "@fishSummary": {
+    "placeholders": {
+      "fish": {
+        "type": "int"
+      },
+      "groups": {
+        "type": "int"
+      }
+    }
+  },
+  "fishDateUnknown": "Date d'introduction inconnue",
+  "fishSince": "Depuis {date}",
+  "@fishSince": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "sceneEmpty": "Bassin vide",
+  "sceneWithKoi": "Bassin avec {count} koï : {names}",
+  "@sceneWithKoi": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "names": {
+        "type": "String"
+      }
+    }
+  },
+  "readingSaved": "Mesure enregistrée !",
+  "formBetween": "Entre {min} et {max}",
+  "@formBetween": {
+    "placeholders": {
+      "min": {
+        "type": "double",
+        "format": "decimalPattern"
+      },
+      "max": {
+        "type": "double",
+        "format": "decimalPattern"
+      }
+    }
+  },
+  "readingSectionMain": "Relevé principal",
+  "readingPhLabel": "pH (ex : 7,2)",
+  "readingTempLabel": "Température (°C)",
+  "readingSectionNitrogen": "Cycle de l'azote (optionnel)",
+  "readingAmmoniaLabel": "Ammoniaque NH₃/NH₄ (mg/L)",
+  "readingSectionHardness": "Duretés (optionnel)",
+  "readingSave": "Enregistrer la mesure",
+  "historyTitle": "Historique des mesures",
+  "historyEmptyTitle": "Aucun relevé",
+  "historyEmptyMessage": "Les mesures que vous enregistrez apparaîtront ici.",
+  "readingAdd": "Ajouter une mesure",
+  "readingDeleteTitle": "Supprimer ce relevé ?",
+  "readingDeleteBody": "Il disparaîtra de l'historique et des courbes. Cette action est définitive.",
+  "readingDeleted": "Relevé supprimé.",
+  "readingDeleteTooltip": "Supprimer ce relevé",
+  "dateUnknown": "Date inconnue",
+  "waterTitle": "Eau",
+  "waterHistory": "Historique",
+  "waterEmptyTitle": "Aucune analyse d'eau",
+  "waterEmptyMessage": "Enregistrez votre premier relevé pour suivre la qualité du bassin.",
+  "waterLatest": "Dernier relevé",
+  "waterPhTrend": "Évolution du pH",
+  "waterTempTrend": "Suivi de la température",
+  "chartNoData": "Aucune donnée pour le moment",
+  "bannerHealthy": "Bassin en bonne santé",
+  "profileTitle": "Profil",
+  "profileDisplay": "Affichage",
+  "profileTheme": "Thème",
+  "themeSystem": "Système",
+  "themeLight": "Clair",
+  "themeDark": "Sombre",
+  "profileReducedMotion": "Animations réduites",
+  "profileReducedMotionHint": "Fige la scène du bassin et les transitions. Utile sur un appareil modeste.",
+  "signOut": "Se déconnecter",
+  "deleteAccountButton": "Supprimer mon compte et mes données",
+  "profileDefaultName": "Passionné",
+  "@profileDefaultName": {
+    "description": "Nom affiché quand le compte n'en a pas."
+  },
+  "pondDimensionsMissing": "Volume et profondeur à renseigner",
+  "deleteIdentityFailed": "La vérification d'identité a échoué. Rien n'a été supprimé.",
+  "deleteNeedsInternet": "Connexion à Internet requise : la suppression n'a pas pu aboutir. Relancez-la une fois connecté, elle reprendra là où elle s'est arrêtée.",
+  "deleteInterrupted": "La suppression s'est interrompue ({error}). Relancez-la : elle reprendra là où elle s'est arrêtée.",
+  "@deleteInterrupted": {
+    "placeholders": {
+      "error": {
+        "type": "Object"
+      }
+    }
+  },
+  "deleteAccountDone": "Votre compte et toutes vos données ont été supprimés.",
+  "deleteAccountNeedsConfirmation": "Vos données sont effacées, mais le compte n'a pas pu l'être sans confirmation. Relancez la suppression.",
+  "deleteAccountFailed": "Vos données sont effacées, mais le compte n'a pas pu l'être ({code}). Relancez la suppression.",
+  "@deleteAccountFailed": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteWrongAccount": "Ce n'est pas le compte {provider} connecté. Choisissez le même compte. Rien n'a été supprimé.",
+  "@deleteWrongAccount": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "deletePopupBlocked": "La fenêtre {provider} n'a pas pu s'ouvrir. Déconnectez-vous, reconnectez-vous, puis relancez la suppression dans les cinq minutes.",
+  "@deletePopupBlocked": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteNoInternet": "Pas de connexion à Internet. Rien n'a été supprimé.",
+  "deleteIdentityFailedCode": "La vérification d'identité a échoué ({code}). Rien n'a été supprimé.",
+  "@deleteIdentityFailedCode": {
+    "placeholders": {
+      "code": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteAccountConfirmWord": "SUPPRIMER",
+  "@deleteAccountConfirmWord": {
+    "description": "Mot à taper pour confirmer la suppression du compte, en capitales."
+  },
+  "deleteAccountTitle": "Supprimer votre compte ?",
+  "deleteAccountBody": "Tout sera effacé définitivement : vos koï et leurs photos, leur croissance, vos relevés d'eau, vos plantes, vos autres poissons et votre bassin. Rien ne pourra être récupéré.",
+  "deleteAccountIdentityHint": "{provider} vous demandera peut-être de confirmer votre identité.",
+  "@deleteAccountIdentityHint": {
+    "placeholders": {
+      "provider": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteAccountTypeWord": "Tapez {word} pour confirmer",
+  "@deleteAccountTypeWord": {
+    "placeholders": {
+      "word": {
+        "type": "String"
+      }
+    }
+  },
+  "deleteForever": "Supprimer définitivement",
+  "deleteInProgress": "Suppression de vos données…",
+  "loginFailed": "La connexion a échoué. Réessayez.",
+  "loginNoNetwork": "Connexion impossible : vérifiez votre accès à Internet.",
+  "loginAccountExists": "Un compte existe déjà avec cette adresse : connectez-vous comme la première fois, avec Google ou avec Apple.",
+  "loginUnauthorizedDomain": "Ce domaine n'est pas autorisé dans la console Firebase.",
+  "loginTagline": "Le carnet de votre bassin",
+  "signInWithApple": "Se connecter avec Apple",
+  "signInWithGoogle": "Se connecter avec Google",
+  "navPond": "Bassin",
+  "navKoi": "Koï",
+  "pondNotFound": "Bassin introuvable.",
+  "fishNotFound": "Ce groupe n'existe plus.",
+  "privacyOpenError": "Impossible d'ouvrir la page : {url}",
+  "@privacyOpenError": {
+    "placeholders": {
+      "url": {
+        "type": "String"
+      }
+    }
+  },
+  "privacyPolicy": "Politique de confidentialité",
+  "errorPermission": "Accès refusé par les règles de sécurité. Vérifiez que vous êtes bien connecté au bon compte.",
+  "errorNetwork": "Connexion au serveur impossible. Vérifiez votre accès à Internet.",
+  "errorIndex": "Un index Firestore manque pour cette requête. Déployez les index du projet.",
+  "errorLoading": "Une erreur est survenue pendant le chargement.",
+  "loadFailed": "Chargement impossible"
+}

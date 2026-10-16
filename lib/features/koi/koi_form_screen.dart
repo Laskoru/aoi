@@ -10,6 +10,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/app_widgets.dart';
 import '../../services/pending_write.dart';
 import '../../widgets/form_body.dart';
+import '../../l10n/l10n.dart';
 
 /// Formulaire d'un koï, en création comme en modification.
 ///
@@ -110,10 +111,10 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
       // Les koï dépassent couramment les trente ans, et bien davantage.
       firstDate: DateTime(1950),
       lastDate: now,
-      helpText: 'Date de naissance du koï',
-      cancelText: 'Annuler',
-      confirmText: 'Valider',
-      fieldLabelText: 'Date de naissance',
+      helpText: context.l10n.koiFormBirthDateHelp,
+      cancelText: context.l10n.commonCancel,
+      confirmText: context.l10n.commonConfirm,
+      fieldLabelText: context.l10n.koiFormBirthDate,
     );
 
     if (picked != null && mounted) {
@@ -131,7 +132,7 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
 
     final User? user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      _showSnack('Session expirée, reconnectez-vous.');
+      _showSnack(context.l10n.sessionExpiredSignIn);
       return;
     }
 
@@ -174,15 +175,15 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
       if (mounted) {
         _showSnack(
           !confirmed
-              ? pendingWriteMessage
+              ? context.l10n.pendingWrite
               : _isEditing
-              ? 'Fiche mise à jour.'
-              : 'Carpe koï ajoutée.',
+              ? context.l10n.koiUpdated
+              : context.l10n.koiAdded,
         );
         Navigator.pop(context);
       }
     } catch (e) {
-      if (mounted) _showSnack('Erreur lors de la sauvegarde : $e');
+      if (mounted) _showSnack(context.l10n.saveError(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -195,21 +196,17 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Supprimer ${koi.name} ?'),
-        content: const Text(
-          "La fiche, son historique de croissance et sa photo seront effacés "
-          "définitivement.\n\nLes koï qui la désignent comme parent garderont "
-          "la trace d'une filiation, marquée comme introuvable.",
-        ),
+        title: Text(context.l10n.koiDeleteTitle(koi.name)),
+        content: Text(context.l10n.koiDeleteBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: context.pond.danger),
-            child: const Text('Supprimer'),
+            child: Text(context.l10n.commonDelete),
           ),
         ],
       ),
@@ -222,7 +219,7 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
     try {
       await KoiService.delete(koi);
       if (mounted) {
-        _showSnack('${koi.name} a été supprimé.');
+        _showSnack(context.l10n.koiDeleted(koi.name));
         // Deux retours : on quitte le formulaire, puis la fiche détail qui
         // n'a plus de document à afficher.
         Navigator.pop(context);
@@ -231,7 +228,7 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _isLoading = false);
-        _showSnack('Suppression impossible : $e');
+        _showSnack(context.l10n.deleteError(e));
       }
     }
   }
@@ -247,7 +244,7 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _isEditing ? 'Modifier la fiche' : 'Ajouter un koï',
+          _isEditing ? context.l10n.koiFormTitleEdit : context.l10n.koiFormTitleAdd,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -259,32 +256,32 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
             IconButton(
               icon: const Icon(Icons.delete_outline_rounded),
               color: context.pond.danger,
-              tooltip: 'Supprimer ce koï',
+              tooltip: context.l10n.koiDeleteTooltip,
               onPressed: _isLoading ? null : _confirmDelete,
             ),
         ],
       ),
       body: user == null
-          ? const Center(child: Text("Session expirée"))
+          ? Center(child: Text(context.l10n.sessionExpired))
           : Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
               child: Form(
                 key: _formKey,
                 child: FormBody(
                   children: [
-                    const SectionLabel("Informations de base"),
+                    SectionLabel(context.l10n.koiFormSectionBasics),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _nameController,
                       inputFormatters: [LengthLimitingTextInputFormatter(80)],
                       textCapitalization: TextCapitalization.words,
                       decoration: _inputDecoration(
-                        'Nom du koï',
+                        context.l10n.koiFormName,
                         Icons.badge_rounded,
                       ),
                       validator: (value) =>
                           (value == null || value.trim().isEmpty)
-                          ? 'Veuillez entrer un nom'
+                          ? context.l10n.formNameRequired
                           : null,
                     ),
                     const SizedBox(height: 16),
@@ -293,19 +290,19 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
                       inputFormatters: [LengthLimitingTextInputFormatter(80)],
                       textCapitalization: TextCapitalization.words,
                       decoration: _inputDecoration(
-                        'Variété (ex : Kohaku)',
+                        context.l10n.koiFormVariety,
                         Icons.color_lens_rounded,
                       ),
                       validator: (value) =>
                           (value == null || value.trim().isEmpty)
-                          ? 'Veuillez entrer une variété'
+                          ? context.l10n.koiFormVarietyRequired
                           : null,
                     ),
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _sizeController,
                       decoration: _inputDecoration(
-                        'Taille (cm)',
+                        context.l10n.koiFormSize,
                         Icons.straighten_rounded,
                       ),
                       keyboardType: const TextInputType.numberWithOptions(
@@ -313,31 +310,39 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
                       ),
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
-                          return 'Obligatoire';
+                          return context.l10n.formRequired;
                         }
                         final parsed = double.tryParse(
                           value.trim().replaceAll(',', '.'),
                         );
                         if (parsed == null || !parsed.isFinite || parsed <= 0) {
-                          return 'Taille invalide';
+                          return context.l10n.koiFormSizeInvalid;
                         }
-                        if (parsed > 200) return 'Taille irréaliste';
+                        if (parsed > 200) {
+                          return context.l10n.koiFormSizeUnrealistic;
+                        }
                         return null;
                       },
                     ),
 
                     const SizedBox(height: 32),
-                    const SectionLabel("Naissance & identité"),
+                    SectionLabel(context.l10n.koiFormSectionIdentity),
                     const SizedBox(height: 12),
                     _buildBirthDateField(),
                     const SizedBox(height: 16),
                     DropdownButtonFormField<KoiSex>(
                       initialValue: _sex,
-                      decoration: _inputDecoration('Sexe', Icons.wc_rounded),
+                      decoration: _inputDecoration(
+                        context.l10n.koiFormSex,
+                        Icons.wc_rounded,
+                      ),
                       items: KoiSex.values
                           .map(
                             (s) =>
-                                DropdownMenuItem(value: s, child: Text(s.label)),
+                                DropdownMenuItem(
+                              value: s,
+                              child: Text(s.label(context.l10n)),
+                            ),
                           )
                           .toList(),
                       onChanged: (value) {
@@ -348,13 +353,16 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
                     DropdownButtonFormField<KoiStatus>(
                       initialValue: _status,
                       decoration: _inputDecoration(
-                        'Statut',
+                        context.l10n.koiFormStatus,
                         Icons.favorite_rounded,
                       ),
                       items: KoiStatus.values
                           .map(
                             (s) =>
-                                DropdownMenuItem(value: s, child: Text(s.label)),
+                                DropdownMenuItem(
+                              value: s,
+                              child: Text(s.label(context.l10n)),
+                            ),
                           )
                           .toList(),
                       onChanged: (value) {
@@ -367,7 +375,7 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
                       inputFormatters: [LengthLimitingTextInputFormatter(80)],
                       textCapitalization: TextCapitalization.words,
                       decoration: _inputDecoration(
-                        'Éleveur (optionnel)',
+                        context.l10n.koiFormBreeder,
                         Icons.storefront_rounded,
                       ),
                     ),
@@ -376,25 +384,25 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
                       controller: _originController,
                       inputFormatters: [LengthLimitingTextInputFormatter(80)],
                       decoration: _inputDecoration(
-                        'Provenance (optionnel)',
+                        context.l10n.koiFormOrigin,
                         Icons.place_rounded,
                       ),
                     ),
 
                     const SizedBox(height: 32),
-                    const SectionLabel("Généalogie & origines"),
+                    SectionLabel(context.l10n.koiFormSectionLineage),
                     const SizedBox(height: 12),
                     _buildParentSelectors(user.uid),
 
                     const SizedBox(height: 32),
-                    const SectionLabel("Notes"),
+                    SectionLabel(context.l10n.koiFormSectionNotes),
                     const SizedBox(height: 12),
                     TextFormField(
                       controller: _notesController,
                       maxLength: 2000,
                       maxLines: 3,
                       decoration: _inputDecoration(
-                        'Observations, particularités…',
+                        context.l10n.koiFormNotesHint,
                         Icons.sticky_note_2_rounded,
                       ),
                     ),
@@ -415,8 +423,8 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
                               )
                             : Text(
                                 _isEditing
-                                    ? 'Enregistrer les modifications'
-                                    : 'Sauvegarder la carpe',
+                                    ? context.l10n.formSaveChanges
+                                    : context.l10n.koiFormSave,
                               ),
                       ),
                     ),
@@ -433,8 +441,8 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
   Widget _buildBirthDateField() {
     final hasDate = _birthDate != null;
     final dateLabel = hasDate
-        ? DateFormat('d MMMM yyyy', 'fr_FR').format(_birthDate!)
-        : 'Non renseignée';
+        ? DateFormat.yMMMMd(context.localeName).format(_birthDate!)
+        : context.l10n.dateNotSet;
 
     // Aperçu de l'âge tel qu'il sera affiché sur la fiche.
     final preview = hasDate
@@ -453,11 +461,14 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
       borderRadius: BorderRadius.circular(AppRadius.field),
       child: InputDecorator(
         decoration:
-            _inputDecoration('Date de naissance', Icons.cake_rounded).copyWith(
+            _inputDecoration(
+              context.l10n.koiFormBirthDate,
+              Icons.cake_rounded,
+            ).copyWith(
               suffixIcon: hasDate
                   ? IconButton(
                       icon: const Icon(Icons.clear_rounded, size: 18),
-                      tooltip: 'Effacer la date',
+                      tooltip: context.l10n.koiFormClearDate,
                       onPressed: () => setState(() => _birthDate = null),
                     )
                   : const Icon(Icons.calendar_month_rounded, size: 20),
@@ -479,7 +490,8 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
             if (preview != null) ...[
               const SizedBox(height: 2),
               Text(
-                '${preview.ageLabel()} · ${preview.yearClass()}',
+                '${preview.ageLabel(context.l10n)} · '
+                '${preview.yearClass(context.l10n)}',
                 style: context.texts.labelMedium?.copyWith(
                   color: context.colors.secondary,
                 ),
@@ -510,13 +522,13 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
         return Column(
           children: [
             _buildParentSelector(
-              label: 'Père',
+              label: context.l10n.koiFather,
               icon: Icons.male_rounded,
               candidates: candidates,
               mode: _fatherMode,
               selectedId: _selectedFatherId,
               manualController: _fatherManualController,
-              manualLabel: 'Nom / variété du père',
+              manualLabel: context.l10n.koiFatherManual,
               onModeChanged: (mode, id) => setState(() {
                 _fatherMode = mode;
                 _selectedFatherId = id;
@@ -524,13 +536,13 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
             ),
             const SizedBox(height: 16),
             _buildParentSelector(
-              label: 'Mère',
+              label: context.l10n.koiMother,
               icon: Icons.female_rounded,
               candidates: candidates,
               mode: _motherMode,
               selectedId: _selectedMotherId,
               manualController: _motherManualController,
-              manualLabel: 'Nom / variété de la mère',
+              manualLabel: context.l10n.koiMotherManual,
               onModeChanged: (mode, id) => setState(() {
                 _motherMode = mode;
                 _selectedMotherId = id;
@@ -553,14 +565,14 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
     required void Function(_ParentMode mode, String? id) onModeChanged,
   }) {
     final items = <DropdownMenuItem<String>>[
-      const DropdownMenuItem(value: 'none', child: Text('Non renseigné')),
-      const DropdownMenuItem(
+      DropdownMenuItem(value: 'none', child: Text(context.l10n.parentNotSet)),
+      DropdownMenuItem(
         value: 'manual',
         child: Row(
           children: [
-            Icon(Icons.edit_note_rounded, size: 18),
-            SizedBox(width: 8),
-            Text('Saisie manuelle / autre origine'),
+            const Icon(Icons.edit_note_rounded, size: 18),
+            const SizedBox(width: 8),
+            Text(context.l10n.parentManual),
           ],
         ),
       ),
@@ -574,7 +586,7 @@ class _KoiFormScreenState extends State<KoiFormScreen> {
               Expanded(
                 child: Text(
                   (doc.data() as Map<String, dynamic>)['name'] as String? ??
-                      'Sans nom',
+                      context.l10n.koiUnnamed,
                   overflow: TextOverflow.ellipsis,
                 ),
               ),

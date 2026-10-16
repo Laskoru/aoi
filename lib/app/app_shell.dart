@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
 import 'package:go_router/go_router.dart';
 import '../theme/app_theme.dart';
 import '../theme/app_widgets.dart';
@@ -29,32 +30,32 @@ class AppShell extends StatelessWidget {
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         height: 68,
         destinations: [
-          const NavigationDestination(
-            icon: Icon(Icons.water_outlined),
-            selectedIcon: Icon(Icons.water_rounded),
-            label: "Bassin",
+          NavigationDestination(
+            icon: const Icon(Icons.water_outlined),
+            selectedIcon: const Icon(Icons.water_rounded),
+            label: context.l10n.navPond,
           ),
           // Material n'a pas d'icône de poisson convenable : l'emblème de
           // l'application tient ce rôle, comme sur les vignettes sans photo.
           NavigationDestination(
             icon: KoiEmblem(size: 24, color: colors.onSurfaceVariant),
             selectedIcon: KoiEmblem(size: 24, color: colors.onPrimaryContainer),
-            label: "Koï",
+            label: context.l10n.navKoi,
           ),
-          const NavigationDestination(
-            icon: Icon(Icons.grass_outlined),
-            selectedIcon: Icon(Icons.grass_rounded),
-            label: "Plantes",
+          NavigationDestination(
+            icon: const Icon(Icons.grass_outlined),
+            selectedIcon: const Icon(Icons.grass_rounded),
+            label: context.l10n.plantListTitle,
           ),
-          const NavigationDestination(
-            icon: Icon(Icons.science_outlined),
-            selectedIcon: Icon(Icons.science_rounded),
-            label: "Eau",
+          NavigationDestination(
+            icon: const Icon(Icons.science_outlined),
+            selectedIcon: const Icon(Icons.science_rounded),
+            label: context.l10n.waterTitle,
           ),
-          const NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded),
-            label: "Profil",
+          NavigationDestination(
+            icon: const Icon(Icons.person_outline_rounded),
+            selectedIcon: const Icon(Icons.person_rounded),
+            label: context.l10n.profileTitle,
           ),
         ],
       ),

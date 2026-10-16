@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/l10n.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../models/water_measurement.dart';
 import '../../services/measurement_service.dart';
@@ -50,7 +51,7 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
 
     final User? user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      _showSnack('Session expirée, reconnectez-vous.');
+      _showSnack(context.l10n.sessionExpiredSignIn);
       return;
     }
 
@@ -72,11 +73,13 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
       ).confirmedWithin();
 
       if (mounted) {
-        _showSnack(confirmed ? 'Mesure enregistrée !' : pendingWriteMessage);
+        _showSnack(
+          confirmed ? context.l10n.readingSaved : context.l10n.pendingWrite,
+        );
         Navigator.pop(context);
       }
     } catch (e) {
-      if (mounted) _showSnack('Erreur : $e');
+      if (mounted) _showSnack(context.l10n.errorDetail(e));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -89,12 +92,12 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
   /// Validateur des champs obligatoires, borné pour attraper les fautes de
   /// frappe (un pH de 72, une eau à 300 °C).
   String? _requiredRange(String? value, double min, double max) {
-    if (value == null || value.trim().isEmpty) return 'Obligatoire';
+    if (value == null || value.trim().isEmpty) return context.l10n.formRequired;
     final parsed = double.tryParse(value.trim().replaceAll(',', '.'));
     // « NaN » collé dans le champ se lit comme un nombre, que les règles
     // refuseraient : l'erreur doit venir d'ici.
-    if (parsed == null || !parsed.isFinite) return 'Valeur invalide';
-    if (parsed < min || parsed > max) return 'Entre $min et $max';
+    if (parsed == null || !parsed.isFinite) return context.l10n.formInvalidValue;
+    if (parsed < min || parsed > max) return context.l10n.formBetween(min, max);
     return null;
   }
 
@@ -108,9 +111,9 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Nouvelle mesure',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          context.l10n.pondNewReading,
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         // Les écrans de saisie gardent le fond de l'application : seule la
         // fiche détail porte une barre colorée, parce qu'elle se pose sur son
@@ -126,12 +129,12 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
           key: _formKey,
           child: FormBody(
             children: [
-              const SectionLabel("Relevé principal"),
+              SectionLabel(context.l10n.readingSectionMain),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _phController,
                 decoration: _inputDecoration(
-                  'pH (ex : 7,2)',
+                  context.l10n.readingPhLabel,
                   Icons.science_rounded,
                 ),
                 keyboardType: const TextInputType.numberWithOptions(
@@ -143,7 +146,7 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
               TextFormField(
                 controller: _tempController,
                 decoration: _inputDecoration(
-                  'Température (°C)',
+                  context.l10n.readingTempLabel,
                   Icons.device_thermostat_rounded,
                 ),
                 keyboardType: const TextInputType.numberWithOptions(
@@ -154,12 +157,12 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
               ),
 
               const SizedBox(height: 32),
-              const SectionLabel("Cycle de l'azote (optionnel)"),
+              SectionLabel(context.l10n.readingSectionNitrogen),
               const SizedBox(height: 12),
               TextFormField(
                 controller: _ammoniaController,
                 decoration: _inputDecoration(
-                  'Ammoniaque NH₃/NH₄ (mg/L)',
+                  context.l10n.readingAmmoniaLabel,
                   Icons.dangerous_rounded,
                 ),
                 keyboardType: const TextInputType.numberWithOptions(
@@ -201,7 +204,7 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
               ),
 
               const SizedBox(height: 32),
-              const SectionLabel("Duretés (optionnel)"),
+              SectionLabel(context.l10n.readingSectionHardness),
               const SizedBox(height: 12),
               Row(
                 children: [
@@ -249,7 +252,7 @@ class _AddMeasurementScreenState extends State<AddMeasurementScreen> {
                             color: context.colors.onPrimary,
                           ),
                         )
-                      : const Text('Enregistrer la mesure'),
+                      : Text(context.l10n.readingSave),
                 ),
               ),
               const SizedBox(height: AppSpacing.lg),

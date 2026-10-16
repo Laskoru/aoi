@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/l10n.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/water_measurement.dart';
@@ -19,7 +20,7 @@ class WaterScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      return const Scaffold(body: Center(child: Text("Session expirée")));
+      return Scaffold(body: Center(child: Text(context.l10n.sessionExpired)));
     }
 
     return Scaffold(
@@ -31,11 +32,14 @@ class WaterScreen extends StatelessWidget {
             elevation: 0,
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             surfaceTintColor: Colors.transparent,
-            title: Text("Eau", style: context.texts.headlineMedium),
+            title: Text(
+              context.l10n.waterTitle,
+              style: context.texts.headlineMedium,
+            ),
             actions: [
               TextButton.icon(
                 icon: const Icon(Icons.history_rounded, size: 18),
-                label: const Text("Historique"),
+                label: Text(context.l10n.waterHistory),
                 onPressed: () => context.push('/eau/historique'),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -64,10 +68,9 @@ class WaterScreen extends StatelessWidget {
                     padding: const EdgeInsets.all(AppSpacing.lg),
                     child: EmptyState(
                       icon: Icons.science_rounded,
-                      title: "Aucune analyse d'eau",
-                      message:
-                          "Enregistrez votre premier relevé pour suivre la qualité du bassin.",
-                      actionLabel: "Ajouter une mesure",
+                      title: context.l10n.waterEmptyTitle,
+                      message: context.l10n.waterEmptyMessage,
+                      actionLabel: context.l10n.readingAdd,
                       onAction: () => context.push('/eau/nouvelle'),
                     ),
                   );
@@ -86,16 +89,16 @@ class WaterScreen extends StatelessWidget {
                       WaterHealthBanner(measurement: latest),
                       const SizedBox(height: AppSpacing.xl),
 
-                      const SectionHeader(
-                        title: "Dernier relevé",
+                      SectionHeader(
+                        title: context.l10n.waterLatest,
                         icon: Icons.water_drop_rounded,
                       ),
                       const SizedBox(height: AppSpacing.md),
                       _ReadingsGrid(readings: latest.readings),
 
                       const SizedBox(height: AppSpacing.xl),
-                      const SectionHeader(
-                        title: "Évolution du pH",
+                      SectionHeader(
+                        title: context.l10n.waterPhTrend,
                         icon: Icons.analytics_rounded,
                       ),
                       const SizedBox(height: AppSpacing.md),
@@ -108,8 +111,8 @@ class WaterScreen extends StatelessWidget {
                       ),
 
                       const SizedBox(height: AppSpacing.lg),
-                      const SectionHeader(
-                        title: "Suivi de la température",
+                      SectionHeader(
+                        title: context.l10n.waterTempTrend,
                         icon: Icons.thermostat_rounded,
                       ),
                       const SizedBox(height: AppSpacing.md),
@@ -137,9 +140,9 @@ class WaterScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadius.field),
         ),
         icon: const Icon(Icons.speed_rounded),
-        label: const Text(
-          "Nouvelle mesure",
-          style: TextStyle(fontWeight: FontWeight.bold),
+        label: Text(
+          context.l10n.pondNewReading,
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
     );

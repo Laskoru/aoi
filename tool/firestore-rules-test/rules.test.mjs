@@ -164,6 +164,8 @@ describe('bassin par défaut', () => {
   test('mais pas sans être connecté', () => assertFails(getDoc(doc(anon, 'ponds/default_bob'))));
   test('chacun crée le sien', () =>
     assertSucceeds(setDoc(doc(bob, 'ponds/default_bob'), { userId: 'bob', name: 'Mon bassin' })));
+  test("créé d'office sans nom, celui de la langue s'affiche", () =>
+    assertSucceeds(setDoc(doc(env.authenticatedContext('dave').firestore(), 'ponds/default_dave'), { userId: 'dave', createdAt: serverTimestamp() })));
   test("personne ne crée celui d'un autre", () =>
     assertFails(setDoc(doc(bob, 'ponds/default_carol'), { userId: 'bob', name: 'Pas le mien' })));
   test('nom vide refusé', () =>

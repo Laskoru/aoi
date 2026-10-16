@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_theme.dart';
 import '../theme/pond_status.dart';
@@ -47,7 +48,7 @@ class MetricCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppRadius.chip),
                 ),
                 child: Text(
-                  condition.label,
+                  condition.label(context.l10n),
                   style: TextStyle(
                     color: statusColor,
                     fontSize: 9.5,
@@ -60,7 +61,7 @@ class MetricCard extends StatelessWidget {
           ),
           const SizedBox(height: 14),
           Text(
-            reading.parameter.label,
+            reading.parameter.label(context.l10n),
             style: context.texts.labelMedium,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,

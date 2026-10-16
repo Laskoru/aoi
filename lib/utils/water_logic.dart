@@ -7,17 +7,16 @@ enum WaterCondition { ideal, warning, danger }
 /// à chaque visite, ensuite les toxiques du cycle de l'azote, enfin les
 /// duretés qui expliquent la stabilité de l'ensemble.
 enum WaterParameter {
-  ph('pH', ''),
-  temperature('Température', '°C'),
-  ammonia('Ammoniaque', 'mg/L'),
-  nitrite('Nitrites', 'mg/L'),
-  nitrate('Nitrates', 'mg/L'),
-  kh('KH', '°d'),
-  gh('GH', '°d');
+  ph(''),
+  temperature('°C'),
+  ammonia('mg/L'),
+  nitrite('mg/L'),
+  nitrate('mg/L'),
+  kh('°d'),
+  gh('°d');
 
-  const WaterParameter(this.label, this.unit);
+  const WaterParameter(this.unit);
 
-  final String label;
   final String unit;
 
   WaterCondition check(double value) => switch (this) {
@@ -28,24 +27,6 @@ enum WaterParameter {
     WaterParameter.nitrate => WaterLogic.checkNitrate(value),
     WaterParameter.kh => WaterLogic.checkKh(value),
     WaterParameter.gh => WaterLogic.checkGh(value),
-  };
-
-  /// Ce qu'il faut retenir du paramètre quand il sort de sa plage.
-  String get explanation => switch (this) {
-    WaterParameter.ph =>
-      "Un pH instable stresse les koï et rend l'ammoniaque plus toxique.",
-    WaterParameter.temperature =>
-      "Sous 10 °C les koï ralentissent ; au-dessus de 28 °C l'eau manque d'oxygène.",
-    WaterParameter.ammonia =>
-      "L'ammoniaque brûle les branchies. Sa présence signale un filtre débordé.",
-    WaterParameter.nitrite =>
-      "Les nitrites asphyxient les koï en bloquant le transport de l'oxygène.",
-    WaterParameter.nitrate =>
-      "Les nitrates s'accumulent lentement. Ils se corrigent par des changements d'eau.",
-    WaterParameter.kh =>
-      "Le KH tamponne le pH. Trop bas, le pH peut s'effondrer d'un coup.",
-    WaterParameter.gh =>
-      "Le GH mesure la dureté générale, qui soutient l'osmorégulation des koï.",
   };
 }
 

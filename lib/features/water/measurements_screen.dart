@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/l10n.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -26,9 +27,9 @@ class MeasurementsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Historique des mesures',
-          style: TextStyle(fontWeight: FontWeight.bold),
+        title: Text(
+          context.l10n.historyTitle,
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         foregroundColor: context.colors.onSurface,
@@ -36,7 +37,7 @@ class MeasurementsScreen extends StatelessWidget {
         elevation: 0,
       ),
       body: user == null
-          ? const Center(child: Text("Session expirée"))
+          ? Center(child: Text(context.l10n.sessionExpired))
           : StreamBuilder<List<WaterMeasurement>>(
               stream: MeasurementService.history(user.uid),
               builder: (context, snapshot) {
@@ -56,10 +57,9 @@ class MeasurementsScreen extends StatelessWidget {
                     padding: const EdgeInsets.all(AppSpacing.lg),
                     child: EmptyState(
                       icon: Icons.science_rounded,
-                      title: "Aucun relevé",
-                      message:
-                          "Les mesures que vous enregistrez apparaîtront ici.",
-                      actionLabel: "Ajouter une mesure",
+                      title: context.l10n.historyEmptyTitle,
+                      message: context.l10n.historyEmptyMessage,
+                      actionLabel: context.l10n.readingAdd,
                       onAction: () => context.push('/eau/nouvelle'),
                     ),
                   );
@@ -89,20 +89,17 @@ class _MeasurementTile extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Supprimer ce relevé ?'),
-        content: const Text(
-          "Il disparaîtra de l'historique et des courbes. Cette action est "
-          "définitive.",
-        ),
+        title: Text(context.l10n.readingDeleteTitle),
+        content: Text(context.l10n.readingDeleteBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: context.pond.danger),
-            child: const Text('Supprimer'),
+            child: Text(context.l10n.commonDelete),
           ),
         ],
       ),
@@ -111,18 +108,19 @@ class _MeasurementTile extends StatelessWidget {
     if (confirmed != true || !context.mounted) return;
 
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     try {
       final confirmed = await MeasurementService.delete(
         measurement.id,
       ).confirmedWithin();
       messenger.showSnackBar(
         SnackBar(
-          content: Text(confirmed ? 'Relevé supprimé.' : pendingWriteMessage),
+          content: Text(confirmed ? l10n.readingDeleted : l10n.pendingWrite),
         ),
       );
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text('Suppression impossible : $e')),
+        SnackBar(content: Text(l10n.deleteError(e))),
       );
     }
   }
@@ -145,20 +143,20 @@ class _MeasurementTile extends StatelessWidget {
               Expanded(
                 child: Text(
                   date == null
-                      ? "Date inconnue"
-                      : DateFormat('EEEE d MMMM yyyy', 'fr_FR').format(date),
+                      ? context.l10n.dateUnknown
+                      : DateFormat.yMMMMEEEEd(context.localeName).format(date),
                   style: context.texts.labelLarge,
                 ),
               ),
               StatusPill(
-                label: condition.label,
+                label: condition.label(context.l10n),
                 color: condition.color(context),
                 background: condition.surface(context),
               ),
               IconButton(
                 icon: const Icon(Icons.delete_outline_rounded, size: 20),
                 color: context.colors.onSurfaceVariant,
-                tooltip: 'Supprimer ce relevé',
+                tooltip: context.l10n.readingDeleteTooltip,
                 onPressed: () => _confirmDelete(context),
               ),
             ],
@@ -167,7 +165,7 @@ class _MeasurementTile extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(left: 26, bottom: AppSpacing.sm),
               child: Text(
-                DateFormat('HH:mm', 'fr_FR').format(date),
+                DateFormat.jm(context.localeName).format(date),
                 style: context.texts.labelMedium,
               ),
             ),
@@ -206,7 +204,7 @@ class _ReadingChip extends StatelessWidget {
         text: TextSpan(
           children: [
             TextSpan(
-              text: "${reading.parameter.label} ",
+              text: "${reading.parameter.label(context.l10n)} ",
               style: TextStyle(
                 fontSize: 11,
                 fontWeight: FontWeight.w600,

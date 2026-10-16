@@ -34,9 +34,10 @@ class PondService {
       if (e.code != 'permission-denied') rethrow;
     }
 
+    // Sans nom : l'interface l'appelle « Mon bassin » dans sa langue, tant
+    // que l'utilisateur n'en choisit pas un.
     await ref.set({
       'userId': userId,
-      'name': 'Mon bassin',
       'createdAt': FieldValue.serverTimestamp(),
     }, SetOptions(merge: true));
     _ensured.add(userId);

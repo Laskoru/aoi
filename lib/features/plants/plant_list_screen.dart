@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/l10n.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import '../../models/plant.dart';
@@ -17,7 +18,7 @@ class PlantListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      return const Scaffold(body: Center(child: Text("Session expirée")));
+      return Scaffold(body: Center(child: Text(context.l10n.sessionExpired)));
     }
 
     return Scaffold(
@@ -29,12 +30,15 @@ class PlantListScreen extends StatelessWidget {
             elevation: 0,
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             surfaceTintColor: Colors.transparent,
-            title: Text("Plantes", style: context.texts.headlineMedium),
+            title: Text(
+              context.l10n.plantListTitle,
+              style: context.texts.headlineMedium,
+            ),
             actions: [
               IconButton(
                 icon: const Icon(Icons.add_circle_rounded, size: 28),
                 color: context.colors.secondary,
-                tooltip: "Ajouter une plante",
+                tooltip: context.l10n.plantFormTitleAdd,
                 onPressed: () => context.push('/plantes/new'),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -65,10 +69,9 @@ class PlantListScreen extends StatelessWidget {
                   sliver: SliverToBoxAdapter(
                     child: EmptyState(
                       icon: Icons.grass_rounded,
-                      title: "Aucune plante",
-                      message:
-                          "Nénuphars, iris, oxygénantes… Notez ce que vous plantez, où, et quand.",
-                      actionLabel: "Ajouter une plante",
+                      title: context.l10n.plantListEmptyTitle,
+                      message: context.l10n.plantListEmptyMessage,
+                      actionLabel: context.l10n.plantFormTitleAdd,
                       onAction: () => context.push('/plantes/new'),
                     ),
                   ),
@@ -119,7 +122,7 @@ class _ZoneHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SectionHeader(
-      title: zone.label,
+      title: zone.label(context.l10n),
       icon: _zoneIcon(zone),
       trailing: StatusPill(
         label: "$count",
@@ -202,13 +205,13 @@ class _PlantTile extends StatelessWidget {
                     ),
                     if (plant.isFloating)
                       StatusPill(
-                        label: "FLOTTANTE",
+                        label: context.l10n.plantFloatingBadge,
                         color: colors.tertiary,
                         background: colors.primaryContainer,
                       ),
                     if (plant.isOxygenating)
                       StatusPill(
-                        label: "OXYGÉNANTE",
+                        label: context.l10n.plantOxygenatingBadge,
                         color: context.pond.ideal,
                         background: context.pond.idealSurface,
                       ),

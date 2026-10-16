@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/l10n.dart';
 import 'package:flutter/foundation.dart' show Uint8List;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -30,7 +31,7 @@ class PondScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      return const Scaffold(body: Center(child: Text("Session expirée")));
+      return Scaffold(body: Center(child: Text(context.l10n.sessionExpired)));
     }
 
     return Scaffold(
@@ -67,19 +68,19 @@ class PondScreen extends StatelessWidget {
                   ),
 
                   SectionHeader(
-                    title: "Mes koï",
+                    title: context.l10n.koiListTitle,
                     icon: Icons.auto_awesome_mosaic_rounded,
                     trailing: TextButton(
                       onPressed: () => context.go('/koi'),
-                      child: const Text("Voir tout"),
+                      child: Text(context.l10n.pondSeeAll),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   _KoiCarousel(uid: user.uid),
 
                   const SizedBox(height: AppSpacing.xl),
-                  const SectionHeader(
-                    title: "Autres habitants",
+                  SectionHeader(
+                    title: context.l10n.pondOtherFish,
                     icon: Icons.groups_rounded,
                   ),
                   const SizedBox(height: AppSpacing.md),
@@ -99,9 +100,9 @@ class PondScreen extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppRadius.field),
         ),
         icon: const Icon(Icons.speed_rounded),
-        label: const Text(
-          "Nouvelle mesure",
-          style: TextStyle(fontWeight: FontWeight.bold),
+        label: Text(
+          context.l10n.pondNewReading,
+          style: const TextStyle(fontWeight: FontWeight.bold),
         ),
       ),
     );
@@ -200,7 +201,8 @@ class _PondMenu extends StatelessWidget {
     if (picked == null || !context.mounted) return;
 
     final messenger = ScaffoldMessenger.of(context);
-    messenger.showSnackBar(const SnackBar(content: Text("Envoi de la photo…")));
+    final l10n = context.l10n;
+    messenger.showSnackBar(SnackBar(content: Text(l10n.photoUploading)));
     try {
       final Uint8List bytes = await picked.readAsBytes();
       final confirmed = await PondService.setPhoto(
@@ -211,32 +213,33 @@ class _PondMenu extends StatelessWidget {
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            confirmed ? "Photo du bassin mise à jour." : pendingWriteMessage,
+            confirmed ? l10n.pondPhotoUpdated : l10n.pendingWrite,
           ),
         ),
       );
     } catch (e) {
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
-        SnackBar(content: Text("Erreur lors du transfert : $e")),
+        SnackBar(content: Text(l10n.uploadError(e))),
       );
     }
   }
 
   Future<void> _removePhoto(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     try {
       final confirmed = await PondService.removePhoto(pond).confirmedWithin();
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            confirmed ? "Photo retirée : retour à l'eau." : pendingWriteMessage,
+            confirmed ? l10n.pondPhotoRemoved : l10n.pendingWrite,
           ),
         ),
       );
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text("Suppression impossible : $e")),
+        SnackBar(content: Text(l10n.deleteError(e))),
       );
     }
   }
@@ -245,7 +248,7 @@ class _PondMenu extends StatelessWidget {
   Widget build(BuildContext context) {
     return PopupMenuButton<String>(
       icon: const Icon(Icons.more_horiz_rounded, color: Colors.white),
-      tooltip: "Options du bassin",
+      tooltip: context.l10n.pondOptions,
       onSelected: (value) {
         switch (value) {
           case 'edit':
@@ -257,11 +260,11 @@ class _PondMenu extends StatelessWidget {
         }
       },
       itemBuilder: (context) => [
-        const PopupMenuItem(
+        PopupMenuItem(
           value: 'edit',
           child: ListTile(
-            leading: Icon(Icons.tune_rounded),
-            title: Text("Modifier le bassin"),
+            leading: const Icon(Icons.tune_rounded),
+            title: Text(context.l10n.pondEdit),
             contentPadding: EdgeInsets.zero,
           ),
         ),
@@ -271,8 +274,8 @@ class _PondMenu extends StatelessWidget {
             leading: const Icon(Icons.add_a_photo_rounded),
             title: Text(
               pond.imageUrl == null
-                  ? "Ajouter une photo du bassin"
-                  : "Changer la photo",
+                  ? context.l10n.pondAddPhoto
+                  : context.l10n.changePhoto,
             ),
             contentPadding: EdgeInsets.zero,
           ),
@@ -282,7 +285,7 @@ class _PondMenu extends StatelessWidget {
             value: 'remove',
             child: ListTile(
               leading: Icon(Icons.water_rounded, color: context.colors.primary),
-              title: const Text("Retirer la photo, revenir à l'eau"),
+              title: Text(context.l10n.pondRemovePhoto),
               contentPadding: EdgeInsets.zero,
             ),
           ),
@@ -302,13 +305,13 @@ class _PondName extends StatelessWidget {
       if (pond?.volumeLiters != null)
         "${pond!.volumeLiters!.toStringAsFixed(0)} L",
       if (pond?.depthCm != null)
-        "${pond!.depthCm!.toStringAsFixed(0)} cm de profondeur",
+        context.l10n.pondDepthCm(pond!.depthCm!.toStringAsFixed(0)),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          "Bienvenue dans votre écosystème,",
+          context.l10n.pondWelcome,
           style: TextStyle(
             fontSize: 13,
             color: Colors.white.withValues(alpha: 0.75),
@@ -316,7 +319,7 @@ class _PondName extends StatelessWidget {
         ),
         const SizedBox(height: 2),
         Text(
-          pond?.name ?? "Mon bassin",
+          pond?.displayName(context.l10n) ?? context.l10n.pondDefaultName,
           style: const TextStyle(
             fontSize: 30,
             fontWeight: FontWeight.bold,
@@ -354,7 +357,7 @@ class _WaterPill extends StatelessWidget {
         final latest = snapshot.data;
         if (latest == null) {
           return StatusPill(
-            label: "AUCUN RELEVÉ",
+            label: context.l10n.pondNoReading,
             color: Colors.white,
             background: Colors.black.withValues(alpha: 0.35),
             icon: Icons.science_outlined,
@@ -363,11 +366,11 @@ class _WaterPill extends StatelessWidget {
         final condition = worstCondition(latest.readings.map((r) => r.condition));
         return Semantics(
           button: true,
-          label: condition.waterSummary,
+          label: condition.waterSummary(context.l10n),
           child: GestureDetector(
             onTap: () => context.go('/eau'),
             child: StatusPill(
-              label: condition.waterSummary.toUpperCase(),
+              label: condition.waterSummary(context.l10n).toUpperCase(),
               color: Colors.white,
               background: condition.color(context).withValues(alpha: 0.85),
               icon: condition.icon,
@@ -408,10 +411,9 @@ class _KoiCarousel extends StatelessWidget {
         if (kois.isEmpty) {
           return EmptyState(
             icon: Icons.waves_rounded,
-            title: "Votre collection est vide",
-            message:
-                "Ajoutez vos premières carpes koï pour suivre leur croissance et leur lignée.",
-            actionLabel: "Ajouter un koï",
+            title: context.l10n.koiListEmptyTitle,
+            message: context.l10n.koiListEmptyMessage,
+            actionLabel: context.l10n.koiFormTitleAdd,
             onAction: () => context.push('/koi/new'),
           );
         }

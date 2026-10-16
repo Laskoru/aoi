@@ -6,19 +6,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 /// se choisit d'abord pour la profondeur qu'elle tolère. La hauteur d'eau
 /// est celle au-dessus du collet, pas celle du bassin.
 enum PlantZone {
-  berge('berge', 'Berge', 0, 'Sol humide, jamais immergé : carex, joncs, iris des marais.'),
-  marecage('marecage', 'Marécage', 20, 'De 0 à 20 cm d\'eau : iris, sagittaires, cyperus.'),
-  immergee('immergee', 'Immergée', 40, 'De 20 à 40 cm : plantes émergées, racines sous l\'eau.'),
-  profonde('profonde', 'Profonde', 100, 'De 40 cm à 1 m : nénuphars et plantes oxygénantes.');
+  berge('berge', 0),
+  marecage('marecage', 20),
+  immergee('immergee', 40),
+  profonde('profonde', 100);
 
-  const PlantZone(this.code, this.label, this.maxDepthCm, this.description);
+  const PlantZone(this.code, this.maxDepthCm);
 
   final String code;
-  final String label;
 
   /// Profondeur d'eau maximale de la zone, en centimètres.
   final int maxDepthCm;
-  final String description;
 
   static PlantZone fromCode(Object? code) {
     return PlantZone.values.firstWhere(

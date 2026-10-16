@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/l10n.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
@@ -17,7 +18,7 @@ class KoiListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      return const Scaffold(body: Center(child: Text("Session expirée")));
+      return Scaffold(body: Center(child: Text(context.l10n.sessionExpired)));
     }
 
     return Scaffold(
@@ -29,12 +30,15 @@ class KoiListScreen extends StatelessWidget {
             elevation: 0,
             backgroundColor: Theme.of(context).scaffoldBackgroundColor,
             surfaceTintColor: Colors.transparent,
-            title: Text("Mes koï", style: context.texts.headlineMedium),
+            title: Text(
+              context.l10n.koiListTitle,
+              style: context.texts.headlineMedium,
+            ),
             actions: [
               IconButton(
                 icon: const Icon(Icons.add_circle_rounded, size: 28),
                 color: context.colors.secondary,
-                tooltip: "Ajouter un koï",
+                tooltip: context.l10n.koiFormTitleAdd,
                 onPressed: () => context.push('/koi/new'),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -70,10 +74,9 @@ class KoiListScreen extends StatelessWidget {
                   return SliverToBoxAdapter(
                     child: EmptyState(
                       icon: Icons.waves_rounded,
-                      title: "Votre collection est vide",
-                      message:
-                          "Ajoutez vos premières carpes koï pour suivre leur croissance et leur lignée.",
-                      actionLabel: "Ajouter un koï",
+                      title: context.l10n.koiListEmptyTitle,
+                      message: context.l10n.koiListEmptyMessage,
+                      actionLabel: context.l10n.koiFormTitleAdd,
                       onAction: () => context.push('/koi/new'),
                     ),
                   );

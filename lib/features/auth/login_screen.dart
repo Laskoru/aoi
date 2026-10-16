@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/l10n.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/auth_service.dart';
 import '../../theme/app_palette.dart';
@@ -42,7 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       debugPrint('[AOI] Échec de connexion : $e');
-      setState(() => _errorMessage = "La connexion a échoué. Réessayez.");
+      setState(() => _errorMessage = context.l10n.loginFailed);
     } finally {
       if (mounted) setState(() => _signingIn = null);
     }
@@ -58,13 +59,12 @@ class _LoginScreenState extends State<LoginScreen> {
   String _messageFor(String code) {
     return switch (code) {
       'network-request-failed' =>
-        "Connexion impossible : vérifiez votre accès à Internet.",
+        context.l10n.loginNoNetwork,
       'account-exists-with-different-credential' =>
-        "Un compte existe déjà avec cette adresse : connectez-vous comme la "
-            "première fois, avec Google ou avec Apple.",
+        context.l10n.loginAccountExists,
       'unauthorized-domain' =>
-        "Ce domaine n'est pas autorisé dans la console Firebase.",
-      _ => "La connexion a échoué. Réessayez.",
+        context.l10n.loginUnauthorizedDomain,
+      _ => context.l10n.loginFailed,
     };
   }
 
@@ -105,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     Text(
-                      "Le carnet de votre bassin",
+                      context.l10n.loginTagline,
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.white.withValues(alpha: 0.7),
@@ -121,7 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       _buildSignInButton(
                         provider: _Provider.apple,
                         icon: Icons.apple,
-                        label: "Se connecter avec Apple",
+                        label: context.l10n.signInWithApple,
                         color: Colors.black,
                       ),
                       const SizedBox(height: 12),
@@ -129,7 +129,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     _buildSignInButton(
                       provider: _Provider.google,
                       icon: Icons.login_rounded,
-                      label: "Se connecter avec Google",
+                      label: context.l10n.signInWithGoogle,
                       color: AppPalette.mizuDeep,
                     ),
 

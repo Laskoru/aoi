@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/l10n.dart';
 import '../../../models/koi.dart';
 import '../../../theme/app_palette.dart';
 import '../../../theme/app_widgets.dart';
@@ -38,7 +39,7 @@ class KoiHeroHeader extends StatelessWidget {
             children: [
               Semantics(
                 button: true,
-                label: "Ajouter une photo",
+                label: context.l10n.addPhoto,
                 child: GestureDetector(
                   onTap: onAddPhoto,
                   child: Stack(
@@ -89,7 +90,7 @@ class KoiHeroHeader extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                koi.variety.isEmpty ? "Variété inconnue" : koi.variety,
+                koi.variety.isEmpty ? context.l10n.varietyUnknown : koi.variety,
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.white.withValues(alpha: 0.75),
@@ -104,15 +105,15 @@ class KoiHeroHeader extends StatelessWidget {
                     color: Colors.white,
                     background: Colors.white.withValues(alpha: 0.18),
                   ),
-                  if (koi.yearClass() != null)
+                  if (koi.yearClass(context.l10n) != null)
                     StatusPill(
-                      label: koi.yearClass()!.toUpperCase(),
+                      label: koi.yearClass(context.l10n)!.toUpperCase(),
                       color: Colors.white,
                       background: AppPalette.hi.withValues(alpha: 0.85),
                     ),
                   if (koi.status != KoiStatus.alive)
                     StatusPill(
-                      label: koi.status.label.toUpperCase(),
+                      label: koi.status.label(context.l10n).toUpperCase(),
                       color: Colors.white,
                       background: Colors.black.withValues(alpha: 0.3),
                     ),

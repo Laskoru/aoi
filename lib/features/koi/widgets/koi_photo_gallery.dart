@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/l10n.dart';
 import '../../../models/koi.dart';
 import '../../../services/koi_service.dart';
 import '../../../theme/app_palette.dart';
@@ -69,7 +70,7 @@ class _AddPhotoTile extends StatelessWidget {
 
     return Semantics(
       button: true,
-      label: "Ajouter une photo",
+      label: context.l10n.addPhoto,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.field),
@@ -85,7 +86,7 @@ class _AddPhotoTile extends StatelessWidget {
             children: [
               Icon(Icons.add_a_photo_rounded, color: colors.primary, size: 22),
               const SizedBox(height: 6),
-              Text("Ajouter", style: context.texts.labelMedium),
+              Text(context.l10n.commonAdd, style: context.texts.labelMedium),
             ],
           ),
         ),
@@ -109,7 +110,7 @@ class _PhotoTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: isMain ? "Photo principale" : "Photo",
+      label: isMain ? context.l10n.photoMain : context.l10n.photo,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadius.field),
@@ -138,18 +139,18 @@ class _PhotoTile extends StatelessWidget {
                 ),
               ),
               if (isMain)
-                const Positioned(
+                Positioned(
                   left: 0,
                   right: 0,
                   bottom: 0,
                   child: ColoredBox(
                     color: AppPalette.hi,
                     child: Padding(
-                      padding: EdgeInsets.symmetric(vertical: 2),
+                      padding: const EdgeInsets.symmetric(vertical: 2),
                       child: Text(
-                        "PRINCIPALE",
+                        context.l10n.photoMainBadge,
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 8,
                           fontWeight: FontWeight.w900,
@@ -193,7 +194,7 @@ class _PhotoViewer extends StatelessWidget {
               alignment: Alignment.topRight,
               child: IconButton(
                 icon: const Icon(Icons.close_rounded, color: Colors.white),
-                tooltip: "Fermer",
+                tooltip: context.l10n.commonClose,
                 onPressed: () => Navigator.pop(context),
               ),
             ),
@@ -209,13 +210,14 @@ class _PhotoViewer extends StatelessWidget {
                     if (!isMain)
                       TextButton.icon(
                         icon: const Icon(Icons.star_rounded),
-                        label: const Text("Définir comme principale"),
+                        label: Text(context.l10n.photoSetMain),
                         style: TextButton.styleFrom(
                           foregroundColor: Colors.white,
                         ),
                         onPressed: () async {
                           final navigator = Navigator.of(context);
                           final messenger = ScaffoldMessenger.of(context);
+                          final l10n = context.l10n;
                           try {
                             final confirmed = await KoiService.setMainPhoto(
                               koi,
@@ -223,16 +225,12 @@ class _PhotoViewer extends StatelessWidget {
                             ).confirmedWithin();
                             if (!confirmed) {
                               messenger.showSnackBar(
-                                const SnackBar(
-                                  content: Text(pendingWriteMessage),
-                                ),
+                                SnackBar(content: Text(l10n.pendingWrite)),
                               );
                             }
                           } catch (e) {
                             messenger.showSnackBar(
-                              SnackBar(
-                                content: Text("Modification impossible : $e"),
-                              ),
+                              SnackBar(content: Text(l10n.updateError(e))),
                             );
                           }
                           navigator.pop();
@@ -240,7 +238,7 @@ class _PhotoViewer extends StatelessWidget {
                       ),
                     TextButton.icon(
                       icon: const Icon(Icons.delete_outline_rounded),
-                      label: const Text("Supprimer"),
+                      label: Text(context.l10n.commonDelete),
                       style: TextButton.styleFrom(
                         foregroundColor: AppPalette.hiBright,
                       ),
@@ -260,19 +258,19 @@ class _PhotoViewer extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Supprimer cette photo ?'),
-        content: const Text("Le cliché sera définitivement effacé."),
+        title: Text(dialogContext.l10n.photoDeleteTitle),
+        content: Text(dialogContext.l10n.photoDeleteBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Annuler'),
+            child: Text(dialogContext.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, true),
             style: TextButton.styleFrom(
               foregroundColor: dialogContext.pond.danger,
             ),
-            child: const Text('Supprimer'),
+            child: Text(dialogContext.l10n.commonDelete),
           ),
         ],
       ),
@@ -282,6 +280,7 @@ class _PhotoViewer extends StatelessWidget {
 
     final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     try {
       final confirmed = await KoiService.deletePhoto(
         koi,
@@ -289,12 +288,10 @@ class _PhotoViewer extends StatelessWidget {
       ).confirmedWithin();
       navigator.pop();
       if (!confirmed) {
-        messenger.showSnackBar(const SnackBar(content: Text(pendingWriteMessage)));
+        messenger.showSnackBar(SnackBar(content: Text(l10n.pendingWrite)));
       }
     } catch (e) {
-      messenger.showSnackBar(
-        SnackBar(content: Text("Suppression impossible : $e")),
-      );
+      messenger.showSnackBar(SnackBar(content: Text(l10n.deleteError(e))));
     }
   }
 }

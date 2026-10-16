@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
@@ -203,7 +204,7 @@ class _KoiEditRoute extends StatelessWidget {
         if (!snapshot.data!.exists) {
           return Scaffold(
             appBar: AppBar(),
-            body: const Center(child: Text("Ce koï n'existe plus.")),
+            body: Center(child: Text(context.l10n.koiNotFound)),
           );
         }
         return KoiFormScreen(existing: Koi.fromFirestore(snapshot.data!));
@@ -224,7 +225,7 @@ class _PondEditRoute extends StatelessWidget {
 
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) {
-      return const Scaffold(body: Center(child: Text("Session expirée")));
+      return Scaffold(body: Center(child: Text(context.l10n.sessionExpired)));
     }
     return FutureBuilder<DocumentSnapshot>(
       future: FirebaseFirestore.instance
@@ -240,7 +241,7 @@ class _PondEditRoute extends StatelessWidget {
         if (!snapshot.data!.exists) {
           return Scaffold(
             appBar: AppBar(),
-            body: const Center(child: Text("Bassin introuvable.")),
+            body: Center(child: Text(context.l10n.pondNotFound)),
           );
         }
         return PondFormScreen(pond: Pond.fromFirestore(snapshot.data!));
@@ -280,7 +281,7 @@ class _PlantEditRoute extends StatelessWidget {
         if (!snapshot.data!.exists) {
           return Scaffold(
             appBar: AppBar(),
-            body: const Center(child: Text("Cette plante n'existe plus.")),
+            body: Center(child: Text(context.l10n.plantNotFound)),
           );
         }
         return PlantFormScreen(existing: Plant.fromFirestore(snapshot.data!));
@@ -323,7 +324,7 @@ class _FishGroupEditRoute extends StatelessWidget {
         if (!snapshot.data!.exists) {
           return Scaffold(
             appBar: AppBar(),
-            body: const Center(child: Text("Ce groupe n'existe plus.")),
+            body: Center(child: Text(context.l10n.fishNotFound)),
           );
         }
         return FishGroupFormScreen(

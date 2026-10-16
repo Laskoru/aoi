@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/l10n.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import '../../../models/fish_group.dart';
@@ -33,10 +34,9 @@ class FishGroupsSection extends StatelessWidget {
         if (groups.isEmpty) {
           return EmptyState(
             icon: Icons.groups_rounded,
-            title: "Aucun autre habitant",
-            message:
-                "Esturgeons, ides, carassins… Notez les espèces qui partagent le bassin avec vos koï.",
-            actionLabel: "Ajouter des poissons",
+            title: context.l10n.fishEmptyTitle,
+            message: context.l10n.fishEmptyMessage,
+            actionLabel: context.l10n.fishFormTitleAdd,
             onAction: () => context.push('/bassin/poissons/new'),
           );
         }
@@ -54,13 +54,13 @@ class FishGroupsSection extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  "$total poisson${total > 1 ? 's' : ''} en ${groups.length} groupe${groups.length > 1 ? 's' : ''}",
+                  context.l10n.fishSummary(total, groups.length),
                   style: context.texts.labelMedium,
                 ),
                 const Spacer(),
                 TextButton.icon(
                   icon: const Icon(Icons.add_rounded, size: 18),
-                  label: const Text("Ajouter"),
+                  label: Text(context.l10n.commonAdd),
                   onPressed: () => context.push('/bassin/poissons/new'),
                 ),
               ],
@@ -119,8 +119,10 @@ class _GroupTile extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   since == null
-                      ? "Date d'introduction inconnue"
-                      : "Depuis ${DateFormat('MMMM yyyy', 'fr_FR').format(since)}",
+                      ? context.l10n.fishDateUnknown
+                      : context.l10n.fishSince(
+                          DateFormat.yMMMM(context.localeName).format(since),
+                        ),
                   style: context.texts.bodyMedium,
                 ),
               ],

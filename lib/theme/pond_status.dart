@@ -4,8 +4,9 @@ import 'app_theme.dart';
 
 /// Habillage visuel des trois états de l'eau.
 ///
-/// Regrouper ici la couleur, le libellé et l'icône garantit qu'un paramètre en
-/// alerte se présente pareil partout : carte de mesure, graphique, bandeau.
+/// Regrouper ici la couleur et l'icône, et leurs textes dans
+/// `WaterConditionLabel`, garantit qu'un paramètre en alerte se présente
+/// pareil partout : carte de mesure, graphique, bandeau.
 extension WaterConditionStyle on WaterCondition {
   Color color(BuildContext context) => switch (this) {
     WaterCondition.ideal => context.pond.ideal,
@@ -19,33 +20,10 @@ extension WaterConditionStyle on WaterCondition {
     WaterCondition.danger => context.pond.dangerSurface,
   };
 
-  String get label => switch (this) {
-    WaterCondition.ideal => 'SAIN',
-    WaterCondition.warning => 'ALERTE',
-    WaterCondition.danger => 'DANGER',
-  };
-
-  /// L'état de l'eau dans son ensemble, accordé au féminin : [label] qualifie
-  /// un paramètre (« pH sain »), pas l'eau.
-  String get waterSummary => switch (this) {
-    WaterCondition.ideal => 'Eau saine',
-    WaterCondition.warning => 'Eau à surveiller',
-    WaterCondition.danger => 'Eau en danger',
-  };
-
   IconData get icon => switch (this) {
     WaterCondition.ideal => Icons.check_circle_rounded,
     WaterCondition.warning => Icons.error_rounded,
     WaterCondition.danger => Icons.warning_rounded,
-  };
-
-  /// Phrase d'explication affichée sous le bandeau de synthèse du bassin.
-  String get advice => switch (this) {
-    WaterCondition.ideal => "Les paramètres relevés sont dans la bonne plage.",
-    WaterCondition.warning =>
-      "Un paramètre s'écarte de la plage idéale. À surveiller.",
-    WaterCondition.danger =>
-      "Un paramètre est hors plage. Intervenez sans attendre.",
   };
 }
 

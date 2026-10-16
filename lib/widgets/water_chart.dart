@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../models/water_measurement.dart';
@@ -45,7 +46,7 @@ class WaterChart extends StatelessWidget {
         if (points.isEmpty) {
           return Center(
             child: Text(
-              "Aucune donnée pour le moment",
+              context.l10n.chartNoData,
               style: context.texts.bodyMedium,
             ),
           );
@@ -59,7 +60,7 @@ class WaterChart extends StatelessWidget {
           for (final m in points)
             m.measuredAt == null
                 ? ""
-                : DateFormat('dd/MM').format(m.measuredAt!),
+                : DateFormat.Md(context.localeName).format(m.measuredAt!),
         ];
 
         final axisStyle = context.texts.labelSmall?.copyWith(

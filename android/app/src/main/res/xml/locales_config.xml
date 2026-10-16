@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Langues de l'appli : Android 13 et plus les propose dans ses réglages
+     (Applis > AOI KOI > Langue), indépendamment de celle du téléphone. -->
+<locale-config xmlns:android="http://schemas.android.com/apk/res/android">
+    <locale android:name="en" />
+    <locale android:name="fr" />
+</locale-config>

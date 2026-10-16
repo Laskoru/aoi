@@ -3,14 +3,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 /// Sexe du koï. Souvent indéterminable avant trois ou quatre ans, d'où
 /// [KoiSex.unknown] par défaut.
 enum KoiSex {
-  unknown('unknown', 'Indéterminé'),
-  male('male', 'Mâle'),
-  female('female', 'Femelle');
+  unknown('unknown'),
+  male('male'),
+  female('female');
 
-  const KoiSex(this.code, this.label);
+  const KoiSex(this.code);
 
   final String code;
-  final String label;
 
   static KoiSex fromCode(Object? code) {
     return KoiSex.values.firstWhere(
@@ -23,15 +22,14 @@ enum KoiSex {
 /// Devenir du poisson. Un koï vendu ou décédé reste dans la base : il peut
 /// figurer dans la généalogie de ses descendants.
 enum KoiStatus {
-  alive('alive', 'Vivant'),
-  deceased('deceased', 'Décédé'),
-  sold('sold', 'Vendu'),
-  given('given', 'Donné');
+  alive('alive'),
+  deceased('deceased'),
+  sold('sold'),
+  given('given');
 
-  const KoiStatus(this.code, this.label);
+  const KoiStatus(this.code);
 
   final String code;
-  final String label;
 
   static KoiStatus fromCode(Object? code) {
     return KoiStatus.values.firstWhere(
@@ -119,56 +117,31 @@ class Koi {
     return months == null ? null : months ~/ 12;
   }
 
-  /// Âge lisible : « 3 ans et 2 mois », « 8 mois », « ~4 ans » quand il vient
-  /// de l'ancien champ, « Âge inconnu » sinon.
-  String ageLabel({DateTime? now}) {
-    final months = ageInMonths(now: now);
-
-    if (months == null) {
-      if (legacyAge != null) {
-        return legacyAge == 1 ? '~1 an' : '~$legacyAge ans';
-      }
-      return 'Âge inconnu';
-    }
-
-    final years = months ~/ 12;
-    final remainingMonths = months % 12;
-
-    if (years == 0) {
-      if (months == 0) return 'Moins d\'un mois';
-      return months == 1 ? '1 mois' : '$months mois';
-    }
-
-    final yearPart = years == 1 ? '1 an' : '$years ans';
-    if (remainingMonths == 0) return yearPart;
-    final monthPart = remainingMonths == 1 ? '1 mois' : '$remainingMonths mois';
-    return '$yearPart et $monthPart';
-  }
-
-  /// Classe d'âge japonaise, comptée en années civiles : un koï né en 2024 est
-  /// tosai en 2024, nisai en 2025, et ainsi de suite.
-  String? yearClass({DateTime? now}) {
+  /// Rang de la classe d'âge japonaise, compté en années civiles : 0 pour un
+  /// koï né cette année (tosai), 1 l'an prochain (nisai), et ainsi de suite.
+  /// `null` si la date de naissance est inconnue. Le texte de l'âge et de la
+  /// classe vient de `KoiAgeLabel`, dans la langue de l'interface.
+  int? yearClassIndex({DateTime? now}) {
     final birth = birthDate;
     if (birth == null) return null;
-
-    const names = [
-      'Tosai',
-      'Nisai',
-      'Sansai',
-      'Yonsai',
-      'Gosai',
-      'Rokusai',
-      'Nanasai',
-      'Hassai',
-      'Kyusai',
-      'Jussai',
-    ];
-
     final index = (now ?? DateTime.now()).year - birth.year;
-    if (index < 0) return null;
-    if (index >= names.length) return 'Plus de ${names.length} ans';
-    return names[index];
+    return index < 0 ? null : index;
   }
+
+  /// Les classes d'âge japonaises, de la première à la dixième année : le
+  /// même mot dans toutes les langues.
+  static const yearClassNames = [
+    'Tosai',
+    'Nisai',
+    'Sansai',
+    'Yonsai',
+    'Gosai',
+    'Rokusai',
+    'Nanasai',
+    'Hassai',
+    'Kyusai',
+    'Jussai',
+  ];
 
   // --- Généalogie ---
 

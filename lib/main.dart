@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -7,13 +6,15 @@ import 'app/auth_listenable.dart';
 import 'app/preferences.dart';
 import 'app/router.dart';
 import 'firebase_options.dart';
+import 'l10n/l10n.dart';
 import 'theme/app_theme.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  // Charge les noms de mois et de jours français utilisés par DateFormat.
-  await initializeDateFormatting('fr_FR');
+  // Charge les noms de mois et de jours de toutes les langues, pour
+  // DateFormat : l'interface suit la langue du téléphone.
+  await initializeDateFormatting();
 
   final preferences = AppPreferences();
   await preferences.load();
@@ -55,13 +56,10 @@ class _MyAppState extends State<MyApp> {
             theme: AppTheme.light(),
             darkTheme: AppTheme.dark(),
             themeMode: prefs.themeMode,
-            locale: const Locale('fr'),
-            supportedLocales: const [Locale('fr'), Locale('en')],
-            localizationsDelegates: const [
-              GlobalMaterialLocalizations.delegate,
-              GlobalWidgetsLocalizations.delegate,
-              GlobalCupertinoLocalizations.delegate,
-            ],
+            // La langue du téléphone, l'anglais s'il en parle une autre.
+            supportedLocales: appLocales,
+            localeListResolutionCallback: resolveAppLocale,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
             routerConfig: _router,
             // Le préréglage « Animations réduites » se propage par le même
             // canal que le réglage système : tout widget qui consulte

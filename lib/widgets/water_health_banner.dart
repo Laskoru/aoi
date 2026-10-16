@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
 import '../models/water_measurement.dart';
 import '../theme/app_palette.dart';
 import '../theme/app_theme.dart';
@@ -20,12 +21,12 @@ class WaterHealthBanner extends StatelessWidget {
     final color = condition.color(context);
 
     final headline = switch (condition) {
-      WaterCondition.ideal => "Bassin en bonne santé",
-      _ =>
-        "${concerning!.parameter.label} : ${concerning.formattedValue} ${concerning.parameter.unit}"
-            .trim(),
+      WaterCondition.ideal => context.l10n.bannerHealthy,
+      _ => concerning!.summary(context.l10n),
     };
-    final detail = concerning?.parameter.explanation ?? condition.advice;
+    final detail =
+        concerning?.parameter.explanation(context.l10n) ??
+        condition.advice(context.l10n);
 
     return Semantics(
       liveRegion: true,

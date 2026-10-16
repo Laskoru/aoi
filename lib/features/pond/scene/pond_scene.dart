@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/l10n.dart';
 import 'package:flutter/scheduler.dart';
 import '../../../models/koi.dart';
 import '../../../theme/app_palette.dart';
@@ -151,9 +152,9 @@ class _PondSceneState extends State<PondScene>
 
   String _semanticsLabel() {
     final n = _simulation.agents.length;
-    if (n == 0) return "Bassin vide";
+    if (n == 0) return context.l10n.sceneEmpty;
     final names = _simulation.agents.map((a) => a.koi.name).join(', ');
-    return "Bassin avec $n koï : $names";
+    return context.l10n.sceneWithKoi(n, names);
   }
 
   /// Combien de koï vivants ne sont pas dessinés, faute de place.

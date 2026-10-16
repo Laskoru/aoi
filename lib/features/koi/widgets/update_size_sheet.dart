@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/l10n.dart';
 import '../../../services/koi_service.dart';
 import '../../../theme/app_palette.dart';
 import '../../../theme/app_theme.dart';
@@ -45,7 +46,7 @@ class _UpdateSizeSheetState extends State<UpdateSizeSheet> {
 
     if (newSize == null || !newSize.isFinite || newSize <= 0 || newSize > 200) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Entrez une taille valide, en centimètres.")),
+        SnackBar(content: Text(context.l10n.sizeInvalidCm)),
       );
       return;
     }
@@ -60,7 +61,7 @@ class _UpdateSizeSheetState extends State<UpdateSizeSheet> {
       if (mounted) {
         if (!confirmed) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text(pendingWriteMessage)),
+            SnackBar(content: Text(context.l10n.pendingWrite)),
           );
         }
         Navigator.pop(context);
@@ -70,7 +71,7 @@ class _UpdateSizeSheetState extends State<UpdateSizeSheet> {
         setState(() => _isSaving = false);
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(SnackBar(content: Text("Enregistrement impossible : $e")));
+        ).showSnackBar(SnackBar(content: Text(context.l10n.saveImpossible(e))));
       }
     }
   }
@@ -97,10 +98,10 @@ class _UpdateSizeSheetState extends State<UpdateSizeSheet> {
               borderRadius: BorderRadius.circular(AppRadius.pill),
             ),
           ),
-          Text("Mettre à jour la taille", style: context.texts.headlineMedium),
+          Text(context.l10n.koiUpdateSize, style: context.texts.headlineMedium),
           const SizedBox(height: 6),
           Text(
-            "Elle sera ajoutée à la courbe de croissance.",
+            context.l10n.koiUpdateSizeHint,
             style: context.texts.bodyMedium,
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -109,10 +110,10 @@ class _UpdateSizeSheetState extends State<UpdateSizeSheet> {
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             autofocus: true,
             onSubmitted: (_) => _isSaving ? null : _save(),
-            decoration: const InputDecoration(
-              labelText: "Nouvelle taille",
+            decoration: InputDecoration(
+              labelText: context.l10n.koiNewSize,
               suffixText: "cm",
-              prefixIcon: Icon(Icons.straighten_rounded, size: 20),
+              prefixIcon: const Icon(Icons.straighten_rounded, size: 20),
             ),
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -130,7 +131,7 @@ class _UpdateSizeSheetState extends State<UpdateSizeSheet> {
                         color: context.colors.onPrimary,
                       ),
                     )
-                  : const Text("Confirmer la mesure"),
+                  : Text(context.l10n.koiConfirmMeasure),
             ),
           ),
         ],

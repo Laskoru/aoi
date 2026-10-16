@@ -46,11 +46,16 @@ class Pond {
     return Pond.fromMap(doc.id, data);
   }
 
+  /// Nom que les versions 2.0 enregistraient d'office, en français. Il
+  /// s'affiche désormais dans la langue de l'interface, comme un bassin sans
+  /// nom : voir `PondNameLabel`.
+  static const legacyDefaultName = 'Mon bassin';
+
   factory Pond.fromMap(String id, Map<String, dynamic> data) {
     return Pond(
       id: id,
       userId: data['userId'] as String? ?? '',
-      name: data['name'] as String? ?? 'Mon bassin',
+      name: data['name'] as String? ?? '',
       volumeLiters: (data['volumeLiters'] as num?)?.toDouble(),
       depthCm: (data['depthCm'] as num?)?.toDouble(),
       imageUrl: data['imageUrl'] as String?,

@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart' show kDebugMode;
 import 'package:flutter/material.dart';
+import '../../l10n/l10n.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:go_router/go_router.dart';
 import '../../app/preferences.dart';
@@ -25,7 +26,10 @@ class ProfileScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text("Profil", style: context.texts.headlineMedium),
+        title: Text(
+          context.l10n.profileTitle,
+          style: context.texts.headlineMedium,
+        ),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
@@ -37,30 +41,33 @@ class ProfileScreen extends StatelessWidget {
           if (user != null) _buildAccount(context, user),
           const SizedBox(height: AppSpacing.lg),
 
-          const SectionHeader(title: "Affichage", icon: Icons.palette_rounded),
+          SectionHeader(
+            title: context.l10n.profileDisplay,
+            icon: Icons.palette_rounded,
+          ),
           const SizedBox(height: AppSpacing.md),
           AppCard(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text("Thème", style: context.texts.labelLarge),
+                Text(context.l10n.profileTheme, style: context.texts.labelLarge),
                 const SizedBox(height: AppSpacing.sm),
                 SegmentedButton<ThemeMode>(
-                  segments: const [
+                  segments: [
                     ButtonSegment(
                       value: ThemeMode.system,
-                      label: Text("Système"),
-                      icon: Icon(Icons.brightness_auto_rounded),
+                      label: Text(context.l10n.themeSystem),
+                      icon: const Icon(Icons.brightness_auto_rounded),
                     ),
                     ButtonSegment(
                       value: ThemeMode.light,
-                      label: Text("Clair"),
-                      icon: Icon(Icons.light_mode_rounded),
+                      label: Text(context.l10n.themeLight),
+                      icon: const Icon(Icons.light_mode_rounded),
                     ),
                     ButtonSegment(
                       value: ThemeMode.dark,
-                      label: Text("Sombre"),
-                      icon: Icon(Icons.dark_mode_rounded),
+                      label: Text(context.l10n.themeDark),
+                      icon: const Icon(Icons.dark_mode_rounded),
                     ),
                   ],
                   selected: {prefs.themeMode},
@@ -69,9 +76,9 @@ class ProfileScreen extends StatelessWidget {
                 const Divider(height: AppSpacing.xl),
                 SwitchListTile.adaptive(
                   contentPadding: EdgeInsets.zero,
-                  title: const Text("Animations réduites"),
+                  title: Text(context.l10n.profileReducedMotion),
                   subtitle: Text(
-                    "Fige la scène du bassin et les transitions. Utile sur un appareil modeste.",
+                    context.l10n.profileReducedMotionHint,
                     style: context.texts.bodyMedium,
                   ),
                   value: prefs.reducedMotion,
@@ -82,7 +89,10 @@ class ProfileScreen extends StatelessWidget {
           ),
 
           const SizedBox(height: AppSpacing.lg),
-          const SectionHeader(title: "Mon bassin", icon: Icons.water_rounded),
+          SectionHeader(
+            title: context.l10n.pondDefaultName,
+            icon: Icons.water_rounded,
+          ),
           const SizedBox(height: AppSpacing.md),
           if (user != null) _buildPond(context, user.uid),
 
@@ -96,7 +106,7 @@ class ProfileScreen extends StatelessWidget {
           OutlinedButton.icon(
             onPressed: AuthService.signOut,
             icon: const Icon(Icons.logout_rounded),
-            label: const Text("Se déconnecter"),
+            label: Text(context.l10n.signOut),
             style: OutlinedButton.styleFrom(
               foregroundColor: context.pond.danger,
               side: BorderSide(
@@ -118,7 +128,7 @@ class ProfileScreen extends StatelessWidget {
                 size: 18,
               ),
               label: Text(
-                "Supprimer mon compte et mes données",
+                context.l10n.deleteAccountButton,
                 style: TextStyle(color: context.pond.danger),
               ),
             ),
@@ -149,7 +159,7 @@ class ProfileScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  user.displayName ?? "Passionné",
+                  user.displayName ?? context.l10n.profileDefaultName,
                   style: context.texts.titleLarge,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
@@ -185,7 +195,7 @@ class ProfileScreen extends StatelessWidget {
           if (pond.volumeLiters != null)
             "${pond.volumeLiters!.toStringAsFixed(0)} L",
           if (pond.depthCm != null)
-            "${pond.depthCm!.toStringAsFixed(0)} cm de profondeur",
+            context.l10n.pondDepthCm(pond.depthCm!.toStringAsFixed(0)),
         ];
 
         return AppCard(
@@ -196,11 +206,14 @@ class ProfileScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(pond.name, style: context.texts.titleLarge),
+                    Text(
+                      pond.displayName(context.l10n),
+                      style: context.texts.titleLarge,
+                    ),
                     const SizedBox(height: 2),
                     Text(
                       details.isEmpty
-                          ? "Volume et profondeur à renseigner"
+                          ? context.l10n.pondDimensionsMissing
                           : details.join(" · "),
                       style: context.texts.bodyMedium,
                     ),

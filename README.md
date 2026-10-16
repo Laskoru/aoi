@@ -215,6 +215,17 @@ Pour que la suppression du compte coupe aussi l'accès Apple, la connexion
 Apple de Firebase doit connaître la clé « Sign in with Apple » du compte
 développeur (Team ID, Key ID et clé privée).
 
+## Traductions
+
+L'appli parle français et anglais, et suit la langue du téléphone (anglais
+pour toute autre langue). Les textes vivent dans `lib/l10n/app_fr.arb`, le
+modèle, et `lib/l10n/app_en.arb` ; `flutter pub get` régénère
+`AppLocalizations`. Dans un écran : `context.l10n.nomDuTexte`. Les modèles
+restent sans langue : leurs libellés passent par `lib/l10n/labels.dart`.
+
+Pour ajouter un texte, l'écrire dans les deux fichiers ARB : un test vérifie
+que les deux langues ont les mêmes clés et les mêmes variables.
+
 ## Tests
 
 ```bash

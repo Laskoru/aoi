@@ -54,6 +54,8 @@ flutter_launcher_icons:
 
 flutter:
   uses-material-design: true
+  # Traductions : génère AppLocalizations depuis lib/l10n (voir l10n.yaml).
+  generate: true
 
   # Eau animée de la scène du bassin. Compilé pour chaque plateforme au
   # build ; un repli peint à la main prend le relais s'il ne charge pas.

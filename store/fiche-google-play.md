@@ -65,6 +65,69 @@ VOS DONNÉES VOUS APPARTIENNENT
 • Suppression du compte et de toutes les données depuis l'application, à tout moment.
 
 Thème clair et sombre, et réduction des animations pour qui la préfère.
+
+Disponible en français et en anglais : l'appli suit la langue du téléphone.
+```
+
+## Textes en anglais
+
+Play Console → **Présence sur le Store** → **Fiche principale du Store** →
+**Gérer les traductions** → **Ajouter vos propres textes traduits** : cocher
+**Anglais (États-Unis) – en-US** et **Anglais (Royaume-Uni) – en-GB**, puis
+coller les mêmes textes dans les deux. Sans captures anglaises, Google Play
+montre les captures françaises.
+
+**Nom de l'application** (30 caractères max) :
+
+```
+AOI KOI: Koi Pond Journal
+```
+
+**Description courte** (80 caractères max) :
+
+```
+Track your koi, pond plants and water quality in one place.
+```
+
+**Description complète** (4 000 caractères max) :
+
+```
+AOI KOI is your garden pond journal: your koi, your other fish, your plants and your water quality, all in one place.
+
+YOUR KOI, ONE BY ONE
+• A record for each koi: name, variety, size, sex, breeder, origin, notes.
+• The date of birth, from which the age is worked out for you — along with the Japanese age class: tosai, nisai, sansai…
+• The lineage: father and mother, linked to other koi in your pond or entered by hand.
+• The growth curve, measurement after measurement.
+• A photo gallery for each koi, to follow how its pattern changes from year to year.
+• A status for each fish: alive, sold, given away or deceased — its place in the lineage is kept.
+
+WATER QUALITY
+• pH, temperature, ammonia, nitrite, nitrate, KH and GH.
+• Thresholds suited to koi: each value is rated good, warning or danger.
+• A banner names the reading that is off and explains what it costs your fish.
+• The full history of your readings, with charts.
+
+PLANTS
+• Sorted by planting zone, from the bank to the bottom: bog, marginal, deep marginal, deep water.
+• Floating and oxygenating plants spotted at a glance.
+• Planting date, quantity, photo, care notes.
+
+OTHER FISH
+Orfe, sturgeon, goldfish… tracked by species and number, with the date they were introduced.
+
+YOUR POND
+Its name, volume, depth, and its photo on the home screen.
+
+YOUR DATA BELONGS TO YOU
+• Sign in with your Google account.
+• Your data is stored in Europe and only you can see it.
+• No ads, no trackers, no data selling.
+• Delete your account and all your data from the app, at any time.
+
+Light and dark themes, and reduced motion for those who prefer it.
+
+Available in English and French: the app follows your phone's language.
 ```
 
 ## Coordonnées et liens

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
+import '../l10n/l10n.dart' show L10nContext;
 import 'app_palette.dart';
 import 'app_theme.dart';
 import 'koi_mark.dart';
@@ -227,20 +229,18 @@ class ErrorState extends StatelessWidget {
 
   /// Un refus de permission n'appelle pas la même réaction qu'une coupure
   /// réseau : autant le dire franchement plutôt que d'afficher le code brut.
-  String get _message {
+  String _message(AppLocalizations l) {
     final text = error?.toString().toLowerCase() ?? '';
     if (text.contains('permission-denied') || text.contains('insufficient')) {
-      return "Accès refusé par les règles de sécurité. Vérifiez que vous êtes "
-          "bien connecté au bon compte.";
+      return l.errorPermission;
     }
     if (text.contains('unavailable') || text.contains('network')) {
-      return "Connexion au serveur impossible. Vérifiez votre accès à Internet.";
+      return l.errorNetwork;
     }
     if (text.contains('failed-precondition') || text.contains('index')) {
-      return "Un index Firestore manque pour cette requête. Déployez les index "
-          "du projet.";
+      return l.errorIndex;
     }
-    return "Une erreur est survenue pendant le chargement.";
+    return l.errorLoading;
   }
 
   @override
@@ -265,11 +265,11 @@ class ErrorState extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title ?? "Chargement impossible",
+                  title ?? context.l10n.loadFailed,
                   style: context.texts.labelLarge?.copyWith(color: danger),
                 ),
                 const SizedBox(height: 2),
-                Text(_message, style: context.texts.bodyMedium),
+                Text(_message(context.l10n), style: context.texts.bodyMedium),
               ],
             ),
           ),

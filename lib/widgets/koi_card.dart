@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
 import 'package:go_router/go_router.dart';
 import '../models/koi.dart';
 import '../theme/app_palette.dart';
@@ -27,7 +28,7 @@ class KoiCard extends StatelessWidget {
 
     return Semantics(
       button: true,
-      label: '${koi.name}, ${koi.variety}, ${koi.ageLabel()}',
+      label: '${koi.name}, ${koi.variety}, ${koi.ageLabel(context.l10n)}',
       child: GestureDetector(
         onTap: () => context.push('/koi/${koi.id}', extra: koi),
         child: Hero(
@@ -95,7 +96,7 @@ class KoiCard extends StatelessWidget {
                           const Spacer(),
                           if (koi.status != KoiStatus.alive)
                             StatusPill(
-                              label: koi.status.label.toUpperCase(),
+                              label: koi.status.label(context.l10n).toUpperCase(),
                               color: hasImage
                                   ? Colors.white
                                   : colors.onSurfaceVariant,
@@ -119,7 +120,9 @@ class KoiCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 1),
                       Text(
-                        koi.variety.isEmpty ? "Variété inconnue" : koi.variety,
+                        koi.variety.isEmpty
+                            ? context.l10n.varietyUnknown
+                            : koi.variety,
                         style: TextStyle(
                           color: secondaryText,
                           fontSize: 12.5,
@@ -139,7 +142,7 @@ class KoiCard extends StatelessWidget {
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
-                              koi.ageLabel(),
+                              koi.ageLabel(context.l10n),
                               style: TextStyle(
                                 color: secondaryText,
                                 fontSize: 11,

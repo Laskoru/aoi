@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/l10n.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:intl/intl.dart';
 import '../../../models/koi.dart';
@@ -28,7 +29,7 @@ class KoiGrowthSection extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    "Dernière taille mesurée",
+                    context.l10n.koiLastSize,
                     style: context.texts.labelMedium,
                   ),
                   const SizedBox(height: AppSpacing.xs),
@@ -41,7 +42,7 @@ class KoiGrowthSection extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: () => _openSizeSheet(context),
                 icon: const Icon(Icons.add_rounded, size: 18),
-                label: const Text("Mesurer"),
+                label: Text(context.l10n.koiMeasure),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: context.colors.secondaryContainer,
                   foregroundColor: context.colors.onSecondaryContainer,
@@ -98,7 +99,7 @@ class _GrowthChart extends StatelessWidget {
         if (entries.isEmpty) {
           return Center(
             child: Text(
-              "Enregistrez une mesure pour tracer la courbe de croissance.",
+              context.l10n.koiGrowthEmpty,
               style: context.texts.bodyMedium,
               textAlign: TextAlign.center,
             ),
@@ -113,7 +114,7 @@ class _GrowthChart extends StatelessWidget {
           for (final entry in entries)
             entry.measuredAt == null
                 ? ""
-                : DateFormat('dd/MM').format(entry.measuredAt!),
+                : DateFormat.Md(context.localeName).format(entry.measuredAt!),
         ];
 
         final axisStyle = context.texts.labelSmall?.copyWith(

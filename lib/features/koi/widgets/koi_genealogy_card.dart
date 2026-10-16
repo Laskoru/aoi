@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/l10n.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
 import '../../../models/koi.dart';
@@ -20,7 +21,7 @@ class KoiGenealogyCard extends StatelessWidget {
         children: [
           Expanded(
             child: _ParentBox(
-              label: "PÈRE",
+              label: context.l10n.koiFather.toUpperCase(),
               parentId: koi.fatherId,
               manualName: koi.fatherNameManual,
               icon: Icons.male_rounded,
@@ -30,7 +31,7 @@ class KoiGenealogyCard extends StatelessWidget {
           const SizedBox(width: 12),
           Expanded(
             child: _ParentBox(
-              label: "MÈRE",
+              label: context.l10n.koiMother.toUpperCase(),
               parentId: koi.motherId,
               manualName: koi.motherNameManual,
               icon: Icons.female_rounded,
@@ -67,15 +68,15 @@ class _ParentBox extends StatelessWidget {
         return _ParentCard(
           role: label,
           name: manual,
-          sub: "Saisie manuelle",
+          sub: context.l10n.parentManualShort,
           icon: icon,
           accent: accent,
         );
       }
       return _ParentCard(
         role: label,
-        name: "Non renseigné",
-        sub: "Inconnu",
+        name: context.l10n.parentNotSet,
+        sub: context.l10n.parentUnknown,
         icon: icon,
         accent: accent,
       );
@@ -88,7 +89,7 @@ class _ParentBox extends StatelessWidget {
           return _ParentCard(
             role: label,
             name: "…",
-            sub: "Chargement",
+            sub: context.l10n.loading,
             icon: icon,
             accent: accent,
           );
@@ -98,7 +99,9 @@ class _ParentBox extends StatelessWidget {
           return _ParentCard(
             role: label,
             name: parent.name,
-            sub: parent.variety.isEmpty ? "Variété inconnue" : parent.variety,
+            sub: parent.variety.isEmpty
+                ? context.l10n.varietyUnknown
+                : parent.variety,
             icon: icon,
             accent: accent,
             onTap: () => context.push('/koi/${parent.id}', extra: parent),
@@ -107,8 +110,8 @@ class _ParentBox extends StatelessWidget {
         // Un parent supprimé depuis : on garde la trace qu'il a existé.
         return _ParentCard(
           role: label,
-          name: "Inconnu",
-          sub: "Introuvable",
+          name: context.l10n.parentUnknown,
+          sub: context.l10n.parentNotFound,
           icon: icon,
           accent: accent,
         );

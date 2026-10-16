@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/l10n.dart';
 import 'package:flutter/foundation.dart' show Uint8List;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
@@ -36,7 +37,7 @@ class KoiDetailScreen extends StatelessWidget {
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
-            return _message(context, "Erreur : ${snapshot.error}");
+            return _message(context, context.l10n.errorDetail(snapshot.error!));
           }
 
           final Koi? found;
@@ -45,7 +46,7 @@ class KoiDetailScreen extends StatelessWidget {
           } else if (snapshot.connectionState == ConnectionState.waiting) {
             found = initialKoi;
           } else {
-            return _message(context, "Ce koï n'existe plus.");
+            return _message(context, context.l10n.koiNotFound);
           }
 
           if (found == null) {
@@ -72,7 +73,7 @@ class KoiDetailScreen extends StatelessWidget {
                 actions: [
                   IconButton(
                     icon: const Icon(Icons.edit_rounded),
-                    tooltip: 'Modifier la fiche',
+                    tooltip: context.l10n.koiFormTitleEdit,
                     onPressed: () =>
                         context.push('/koi/${koi.id}/edit', extra: koi),
                   ),
@@ -90,8 +91,8 @@ class KoiDetailScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SectionHeader(
-                        title: "Galerie",
+                      SectionHeader(
+                        title: context.l10n.koiSectionGallery,
                         icon: Icons.photo_library_rounded,
                       ),
                       const SizedBox(height: AppSpacing.md),
@@ -101,8 +102,8 @@ class KoiDetailScreen extends StatelessWidget {
                       ),
 
                       const SizedBox(height: AppSpacing.lg),
-                      const SectionHeader(
-                        title: "Identité",
+                      SectionHeader(
+                        title: context.l10n.koiSectionIdentity,
                         icon: Icons.fingerprint_rounded,
                       ),
                       const SizedBox(height: AppSpacing.md),
@@ -110,8 +111,8 @@ class KoiDetailScreen extends StatelessWidget {
 
                       if (koi.breeder != null || koi.origin != null) ...[
                         const SizedBox(height: AppSpacing.lg),
-                        const SectionHeader(
-                          title: "Provenance",
+                        SectionHeader(
+                          title: context.l10n.koiSectionOrigin,
                           icon: Icons.storefront_rounded,
                         ),
                         const SizedBox(height: AppSpacing.md),
@@ -119,16 +120,16 @@ class KoiDetailScreen extends StatelessWidget {
                       ],
 
                       const SizedBox(height: AppSpacing.lg),
-                      const SectionHeader(
-                        title: "Généalogie",
+                      SectionHeader(
+                        title: context.l10n.koiSectionLineage,
                         icon: Icons.account_tree_rounded,
                       ),
                       const SizedBox(height: AppSpacing.md),
                       KoiGenealogyCard(koi: koi),
 
                       const SizedBox(height: AppSpacing.lg),
-                      const SectionHeader(
-                        title: "Croissance",
+                      SectionHeader(
+                        title: context.l10n.koiSectionGrowth,
                         icon: Icons.straighten_rounded,
                       ),
                       const SizedBox(height: AppSpacing.md),
@@ -136,8 +137,8 @@ class KoiDetailScreen extends StatelessWidget {
 
                       if (koi.notes != null) ...[
                         const SizedBox(height: AppSpacing.lg),
-                        const SectionHeader(
-                          title: "Notes",
+                        SectionHeader(
+                          title: context.l10n.koiFormSectionNotes,
                           icon: Icons.sticky_note_2_rounded,
                         ),
                         const SizedBox(height: AppSpacing.md),
@@ -184,20 +185,21 @@ class KoiDetailScreen extends StatelessWidget {
     if (pickedFile == null || !context.mounted) return;
 
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     messenger.showSnackBar(
-      const SnackBar(
+      SnackBar(
         content: Row(
           children: [
-            SizedBox(
+            const SizedBox(
               width: 18,
               height: 18,
               child: CircularProgressIndicator(strokeWidth: 2),
             ),
-            SizedBox(width: 15),
-            Text("Envoi de la photo…"),
+            const SizedBox(width: 15),
+            Text(l10n.photoUploading),
           ],
         ),
-        duration: Duration(minutes: 2),
+        duration: const Duration(minutes: 2),
       ),
     );
 
@@ -214,7 +216,7 @@ class KoiDetailScreen extends StatelessWidget {
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            confirmed ? "Photo ajoutée à la galerie." : pendingWriteMessage,
+            confirmed ? l10n.koiPhotoAdded : l10n.pendingWrite,
           ),
         ),
       );
@@ -222,7 +224,7 @@ class KoiDetailScreen extends StatelessWidget {
       debugPrint("[AOI] Photo non enregistrée : $e");
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
-        SnackBar(content: Text("Erreur lors du transfert : $e")),
+        SnackBar(content: Text(l10n.uploadError(e))),
       );
     }
   }

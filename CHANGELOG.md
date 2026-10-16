@@ -8,7 +8,20 @@ comprises).
 
 ## À venir
 
+### Nouveautés
+- **L'appli parle anglais** : elle suit la langue du téléphone, français ou
+  anglais, et passe en anglais pour toute autre langue. Dates au format de
+  chaque pays (« 15 juin 2024 », « June 15, 2024 »). Sur Android 13 et plus,
+  la langue de l'appli se choisit aussi dans les réglages du téléphone.
+
 ### En coulisses (hors notes Play)
+- Traductions : textes rangés dans `lib/l10n/app_fr.arb` et `app_en.arb`
+  (293 textes), modèles sans langue, tests de parité entre les deux langues.
+  La carte « Données de démonstration », réservée au mode développement,
+  reste en français.
+- Bassin créé d'office : plus de nom enregistré. Il s'appelle « Mon bassin »
+  ou « My pond » selon la langue, et l'ancien nom par défaut, enregistré en
+  français, s'affiche traduit.
 - Version iPhone en préparation : « Se connecter avec Apple », proposé sur
   iPhone seulement et exigé par l'App Store à côté de Google ; réglages iOS
   (identifiant `fr.aoikoi.app`, iOS 15 minimum, iPhone seulement, textes
@@ -17,6 +30,19 @@ comprises).
 - Choix d'une photo : ses métadonnées ne sont plus demandées, l'appli les
   efface de toute façon. Sur iPhone, plus de demande d'accès à toute la
   photothèque.
+
+### Notes Play prêtes à coller
+```
+<fr-FR>
+Nouveau : AOI KOI parle anglais. L'appli suit la langue de votre téléphone.
+</fr-FR>
+<en-US>
+New: AOI KOI now speaks English. The app follows your phone's language.
+</en-US>
+<en-GB>
+New: AOI KOI now speaks English. The app follows your phone's language.
+</en-GB>
+```
 
 ## 2.0.1 (9) — octobre 2026
 

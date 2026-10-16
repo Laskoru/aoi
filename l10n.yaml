@@ -1,0 +1,7 @@
+# Traductions de l'appli : textes dans lib/l10n/app_<langue>.arb, le
+# français servant de modèle. `flutter pub get` régénère AppLocalizations.
+arb-dir: lib/l10n
+template-arb-file: app_fr.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+nullable-getter: false

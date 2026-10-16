@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/l10n.dart';
 import 'package:flutter/foundation.dart' show Uint8List;
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -45,7 +46,7 @@ class PlantDetailScreen extends StatelessWidget {
             }
             return Center(
               child: Text(
-                "Cette plante n'existe plus.",
+                context.l10n.plantNotFound,
                 style: context.texts.bodyMedium,
               ),
             );
@@ -67,7 +68,7 @@ class PlantDetailScreen extends StatelessWidget {
                 actions: [
                   IconButton(
                     icon: const Icon(Icons.edit_rounded),
-                    tooltip: 'Modifier la plante',
+                    tooltip: context.l10n.plantFormTitleEdit,
                     onPressed: () =>
                         context.push('/plantes/${plant.id}/edit', extra: plant),
                   ),
@@ -80,8 +81,8 @@ class PlantDetailScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SectionHeader(
-                        title: "Plantation",
+                      SectionHeader(
+                        title: context.l10n.plantSectionPlanting,
                         icon: Icons.landscape_rounded,
                       ),
                       const SizedBox(height: AppSpacing.md),
@@ -93,22 +94,22 @@ class PlantDetailScreen extends StatelessWidget {
                               children: [
                                 InfoTile(
                                   icon: Icons.water_rounded,
-                                  label: "Zone",
-                                  value: plant.zone.label,
+                                  label: context.l10n.plantZone,
+                                  value: plant.zone.label(context.l10n),
                                 ),
                                 const VerticalRule(),
                                 InfoTile(
                                   icon: Icons.numbers_rounded,
-                                  label: "Quantité",
+                                  label: context.l10n.plantQuantity,
                                   value: "${plant.quantity}",
                                 ),
                                 const VerticalRule(),
                                 InfoTile(
                                   icon: Icons.event_rounded,
-                                  label: "Plantée",
+                                  label: context.l10n.plantPlanted,
                                   value: plant.plantedAt == null
                                       ? "—"
-                                      : DateFormat('MMM yyyy', 'fr_FR')
+                                      : DateFormat.yMMM(context.localeName)
                                             .format(plant.plantedAt!),
                                 ),
                               ],
@@ -121,8 +122,8 @@ class PlantDetailScreen extends StatelessWidget {
                             ),
                             LabelledRow(
                               icon: Icons.info_outline_rounded,
-                              label: "Profondeur",
-                              value: plant.zone.description,
+                              label: context.l10n.plantDepth,
+                              value: plant.zone.description(context.l10n),
                             ),
                           ],
                         ),
@@ -130,8 +131,8 @@ class PlantDetailScreen extends StatelessWidget {
 
                       if (plant.notes != null) ...[
                         const SizedBox(height: AppSpacing.lg),
-                        const SectionHeader(
-                          title: "Notes",
+                        SectionHeader(
+                          title: context.l10n.koiFormSectionNotes,
                           icon: Icons.sticky_note_2_rounded,
                         ),
                         const SizedBox(height: AppSpacing.md),
@@ -172,6 +173,7 @@ class _Header extends StatelessWidget {
     );
     if (picked == null || !context.mounted) return;
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     try {
       final Uint8List bytes = await picked.readAsBytes();
       final confirmed = await PlantService.setPhoto(
@@ -180,12 +182,12 @@ class _Header extends StatelessWidget {
       ).confirmedWithin(const Duration(seconds: 20));
       messenger.showSnackBar(
         SnackBar(
-          content: Text(confirmed ? "Photo mise à jour." : pendingWriteMessage),
+          content: Text(confirmed ? l10n.photoUpdated : l10n.pendingWrite),
         ),
       );
     } catch (e) {
       messenger.showSnackBar(
-        SnackBar(content: Text("Erreur lors du transfert : $e")),
+        SnackBar(content: Text(l10n.uploadError(e))),
       );
     }
   }
@@ -206,7 +208,7 @@ class _Header extends StatelessWidget {
         children: [
           Semantics(
             button: true,
-            label: "Changer la photo",
+            label: context.l10n.changePhoto,
             child: GestureDetector(
               onTap: () => _pickPhoto(context),
               child: Stack(
@@ -275,19 +277,19 @@ class _Header extends StatelessWidget {
             spacing: AppSpacing.sm,
             children: [
               StatusPill(
-                label: plant.zone.label.toUpperCase(),
+                label: plant.zone.label(context.l10n).toUpperCase(),
                 color: Colors.white,
                 background: Colors.white.withValues(alpha: 0.18),
               ),
               if (plant.isFloating)
                 StatusPill(
-                  label: "FLOTTANTE",
+                  label: context.l10n.plantFloatingBadge,
                   color: Colors.white,
                   background: Colors.white.withValues(alpha: 0.18),
                 ),
               if (plant.isOxygenating)
                 StatusPill(
-                  label: "OXYGÉNANTE",
+                  label: context.l10n.plantOxygenatingBadge,
                   color: Colors.white,
                   background: AppPalette.hi.withValues(alpha: 0.85),
                 ),

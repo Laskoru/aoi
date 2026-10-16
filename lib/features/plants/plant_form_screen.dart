@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/l10n.dart';
 import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
@@ -71,9 +72,9 @@ class _PlantFormScreenState extends State<PlantFormScreen> {
       initialDate: _plantedAt ?? now,
       firstDate: DateTime(1990),
       lastDate: now,
-      helpText: 'Date de plantation',
-      cancelText: 'Annuler',
-      confirmText: 'Valider',
+      helpText: context.l10n.plantFormDate,
+      cancelText: context.l10n.commonCancel,
+      confirmText: context.l10n.commonConfirm,
     );
     if (picked != null && mounted) setState(() => _plantedAt = picked);
   }
@@ -82,7 +83,7 @@ class _PlantFormScreenState extends State<PlantFormScreen> {
     if (!_formKey.currentState!.validateAndReveal()) return;
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      _snack('Session expirée, reconnectez-vous.');
+      _snack(context.l10n.sessionExpiredSignIn);
       return;
     }
 
@@ -110,15 +111,15 @@ class _PlantFormScreenState extends State<PlantFormScreen> {
       if (mounted) {
         _snack(
           !confirmed
-              ? pendingWriteMessage
+              ? context.l10n.pendingWrite
               : _isEditing
-              ? 'Plante mise à jour.'
-              : 'Plante ajoutée.',
+              ? context.l10n.plantUpdated
+              : context.l10n.plantAdded,
         );
         Navigator.pop(context);
       }
     } catch (e) {
-      if (mounted) _snack('Erreur lors de la sauvegarde : $e');
+      if (mounted) _snack(context.l10n.saveError(e));
     } finally {
       if (mounted) setState(() => _saving = false);
     }
@@ -131,17 +132,17 @@ class _PlantFormScreenState extends State<PlantFormScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Supprimer ${plant.name} ?'),
-        content: const Text("La fiche et sa photo seront effacées."),
+        title: Text(context.l10n.plantDeleteTitle(plant.name)),
+        content: Text(context.l10n.plantDeleteBody),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Annuler'),
+            child: Text(context.l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
             style: TextButton.styleFrom(foregroundColor: context.pond.danger),
-            child: const Text('Supprimer'),
+            child: Text(context.l10n.commonDelete),
           ),
         ],
       ),
@@ -152,7 +153,11 @@ class _PlantFormScreenState extends State<PlantFormScreen> {
     try {
       final confirmed = await PlantService.delete(plant).confirmedWithin();
       if (mounted) {
-        _snack(confirmed ? '${plant.name} a été supprimée.' : pendingWriteMessage);
+        _snack(
+          confirmed
+              ? context.l10n.plantDeleted(plant.name)
+              : context.l10n.pendingWrite,
+        );
         // On quitte le formulaire, puis la fiche qui n'a plus rien à afficher.
         Navigator.pop(context);
         Navigator.pop(context);
@@ -160,7 +165,7 @@ class _PlantFormScreenState extends State<PlantFormScreen> {
     } catch (e) {
       if (mounted) {
         setState(() => _saving = false);
-        _snack('Suppression impossible : $e');
+        _snack(context.l10n.deleteError(e));
       }
     }
   }
@@ -173,7 +178,9 @@ class _PlantFormScreenState extends State<PlantFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          _isEditing ? 'Modifier la plante' : 'Ajouter une plante',
+          _isEditing
+              ? context.l10n.plantFormTitleEdit
+              : context.l10n.plantFormTitleAdd,
           style: const TextStyle(fontWeight: FontWeight.bold),
         ),
         backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -185,7 +192,7 @@ class _PlantFormScreenState extends State<PlantFormScreen> {
             IconButton(
               icon: const Icon(Icons.delete_outline_rounded),
               color: context.pond.danger,
-              tooltip: 'Supprimer cette plante',
+              tooltip: context.l10n.plantDeleteTooltip,
               onPressed: _saving ? null : _confirmDelete,
             ),
         ],
@@ -195,26 +202,26 @@ class _PlantFormScreenState extends State<PlantFormScreen> {
         child: FormBody(
           padding: const EdgeInsets.all(AppSpacing.md),
           children: [
-            const SectionLabel("Identité"),
+            SectionLabel(context.l10n.koiSectionIdentity),
             const SizedBox(height: 12),
             TextFormField(
               controller: _name,
               inputFormatters: [LengthLimitingTextInputFormatter(80)],
               textCapitalization: TextCapitalization.sentences,
-              decoration: const InputDecoration(
-                labelText: 'Nom (ex : Nénuphar rose)',
+              decoration: InputDecoration(
+                labelText: context.l10n.plantFormName,
                 prefixIcon: Icon(Icons.grass_rounded, size: 20),
               ),
               validator: (v) => (v == null || v.trim().isEmpty)
-                  ? 'Veuillez entrer un nom'
+                  ? context.l10n.formNameRequired
                   : null,
             ),
             const SizedBox(height: 16),
             TextFormField(
               controller: _species,
               inputFormatters: [LengthLimitingTextInputFormatter(120)],
-              decoration: const InputDecoration(
-                labelText: 'Espèce ou variété (optionnel)',
+              decoration: InputDecoration(
+                labelText: context.l10n.plantFormSpecies,
                 prefixIcon: Icon(Icons.science_outlined, size: 20),
               ),
             ),
@@ -222,20 +229,20 @@ class _PlantFormScreenState extends State<PlantFormScreen> {
             TextFormField(
               controller: _quantity,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Nombre de pots ou de pieds',
+              decoration: InputDecoration(
+                labelText: context.l10n.plantFormQuantity,
                 prefixIcon: Icon(Icons.numbers_rounded, size: 20),
               ),
               validator: (v) {
                 final n = int.tryParse((v ?? '').trim());
-                if (n == null || n < 1) return 'Au moins 1';
-                if (n > 500) return 'Valeur irréaliste';
+                if (n == null || n < 1) return context.l10n.formAtLeastOne;
+                if (n > 500) return context.l10n.formUnrealistic;
                 return null;
               },
             ),
 
             const SizedBox(height: AppSpacing.xl),
-            const SectionLabel("Zone de plantation"),
+            SectionLabel(context.l10n.plantSectionZone),
             const SizedBox(height: 12),
             _ZonePicker(
               selected: _zone,
@@ -244,9 +251,9 @@ class _PlantFormScreenState extends State<PlantFormScreen> {
             const SizedBox(height: 12),
             SwitchListTile.adaptive(
               contentPadding: EdgeInsets.zero,
-              title: const Text("Flottante"),
+              title: Text(context.l10n.plantFloating),
               subtitle: Text(
-                "Non enracinée : elle ombrage l'eau et abrite les alevins.",
+                context.l10n.plantFloatingHint,
                 style: context.texts.bodyMedium,
               ),
               value: _isFloating,
@@ -254,9 +261,9 @@ class _PlantFormScreenState extends State<PlantFormScreen> {
             ),
             SwitchListTile.adaptive(
               contentPadding: EdgeInsets.zero,
-              title: const Text("Oxygénante"),
+              title: Text(context.l10n.plantOxygenating),
               subtitle: Text(
-                "Immergée : elle consomme les nitrates et produit l'oxygène.",
+                context.l10n.plantOxygenatingHint,
                 style: context.texts.bodyMedium,
               ),
               value: _isOxygenating,
@@ -264,27 +271,29 @@ class _PlantFormScreenState extends State<PlantFormScreen> {
             ),
 
             const SizedBox(height: AppSpacing.xl),
-            const SectionLabel("Plantation"),
+            SectionLabel(context.l10n.plantSectionPlanting),
             const SizedBox(height: 12),
             InkWell(
               onTap: _pickDate,
               borderRadius: BorderRadius.circular(AppRadius.field),
               child: InputDecorator(
                 decoration: InputDecoration(
-                  labelText: 'Date de plantation',
+                  labelText: context.l10n.plantFormDate,
                   prefixIcon: const Icon(Icons.event_rounded, size: 20),
                   suffixIcon: _plantedAt != null
                       ? IconButton(
                           icon: const Icon(Icons.clear_rounded, size: 18),
-                          tooltip: 'Effacer la date',
+                          tooltip: context.l10n.koiFormClearDate,
                           onPressed: () => setState(() => _plantedAt = null),
                         )
                       : const Icon(Icons.calendar_month_rounded, size: 20),
                 ),
                 child: Text(
                   _plantedAt == null
-                      ? 'Non renseignée'
-                      : DateFormat('d MMMM yyyy', 'fr_FR').format(_plantedAt!),
+                      ? context.l10n.dateNotSet
+                      : DateFormat.yMMMMd(
+                          context.localeName,
+                        ).format(_plantedAt!),
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: _plantedAt == null
@@ -299,14 +308,14 @@ class _PlantFormScreenState extends State<PlantFormScreen> {
             ),
 
             const SizedBox(height: AppSpacing.xl),
-            const SectionLabel("Notes"),
+            SectionLabel(context.l10n.koiFormSectionNotes),
             const SizedBox(height: 12),
             TextFormField(
               controller: _notes,
               maxLength: 2000,
               maxLines: 3,
-              decoration: const InputDecoration(
-                labelText: 'Division, engrais, hivernage…',
+              decoration: InputDecoration(
+                labelText: context.l10n.plantFormNotesHint,
                 prefixIcon: Icon(Icons.sticky_note_2_rounded, size: 20),
               ),
             ),
@@ -327,8 +336,8 @@ class _PlantFormScreenState extends State<PlantFormScreen> {
                       )
                     : Text(
                         _isEditing
-                            ? 'Enregistrer les modifications'
-                            : 'Ajouter la plante',
+                            ? context.l10n.formSaveChanges
+                            : context.l10n.plantFormSave,
                       ),
               ),
             ),
@@ -387,12 +396,18 @@ class _ZonePicker extends StatelessWidget {
                           children: [
                             Text(
                               zone.maxDepthCm == 0
-                                  ? zone.label
-                                  : "${zone.label} · jusqu'à ${zone.maxDepthCm} cm",
+                                  ? zone.label(context.l10n)
+                                  : context.l10n.plantZoneUpTo(
+                                      zone.label(context.l10n),
+                                      zone.maxDepthCm,
+                                    ),
                               style: context.texts.labelLarge,
                             ),
                             const SizedBox(height: 2),
-                            Text(zone.description, style: context.texts.bodyMedium),
+                            Text(
+                              zone.description(context.l10n),
+                              style: context.texts.bodyMedium,
+                            ),
                           ],
                         ),
                       ),

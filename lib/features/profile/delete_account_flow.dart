@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import '../../l10n/l10n.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../../services/account_service.dart';
 import '../../services/auth_service.dart';
@@ -24,6 +25,7 @@ Future<void> startAccountDeletion(BuildContext context) async {
 
   final messenger = ScaffoldMessenger.of(context);
   final navigator = Navigator.of(context, rootNavigator: true);
+  final l10n = context.l10n;
 
   // 1. Identité : Firebase n'accepte de supprimer qu'un compte connecté
   //    depuis moins de cinq minutes.
@@ -31,15 +33,13 @@ Future<void> startAccountDeletion(BuildContext context) async {
     await AuthService.reauthenticate();
   } on FirebaseAuthException catch (e) {
     if (_isCancellation(e.code)) return;
-    messenger.showSnackBar(SnackBar(content: Text(_identityMessage(e.code))));
+    messenger.showSnackBar(
+      SnackBar(content: Text(_identityMessage(l10n, e.code))),
+    );
     return;
   } catch (e) {
     messenger.showSnackBar(
-      const SnackBar(
-        content: Text(
-          "La vérification d'identité a échoué. Rien n'a été supprimé.",
-        ),
-      ),
+      SnackBar(content: Text(l10n.deleteIdentityFailed)),
     );
     return;
   }
@@ -64,11 +64,8 @@ Future<void> startAccountDeletion(BuildContext context) async {
         content: Text(
           e is TimeoutException ||
                   (e is FirebaseException && e.code == 'unavailable')
-              ? "Connexion à Internet requise : la suppression n'a pas pu "
-                    "aboutir. Relancez-la une fois connecté, elle reprendra là "
-                    "où elle s'est arrêtée."
-              : "La suppression s'est interrompue ($e). Relancez-la : elle "
-                    "reprendra là où elle s'est arrêtée.",
+              ? l10n.deleteNeedsInternet
+              : l10n.deleteInterrupted(e),
         ),
       ),
     );
@@ -88,9 +85,7 @@ Future<void> startAccountDeletion(BuildContext context) async {
       await AuthService.deleteCurrentUser();
     }
     messenger.showSnackBar(
-      const SnackBar(
-        content: Text("Votre compte et toutes vos données ont été supprimés."),
-      ),
+      SnackBar(content: Text(l10n.deleteAccountDone)),
     );
   } catch (e) {
     final code = e is FirebaseAuthException ? e.code : '$e';
@@ -98,10 +93,8 @@ Future<void> startAccountDeletion(BuildContext context) async {
       SnackBar(
         content: Text(
           _isCancellation(code)
-              ? "Vos données sont effacées, mais le compte n'a pas pu l'être "
-                    "sans confirmation. Relancez la suppression."
-              : "Vos données sont effacées, mais le compte n'a pas pu l'être "
-                    "($code). Relancez la suppression.",
+              ? l10n.deleteAccountNeedsConfirmation
+              : l10n.deleteAccountFailed(code),
         ),
       ),
     );
@@ -115,18 +108,14 @@ bool _isCancellation(String code) {
       code == 'canceled';
 }
 
-String _identityMessage(String code) {
+String _identityMessage(AppLocalizations l, String code) {
   final provider = AuthService.providerLabel;
   return switch (code) {
-    'user-mismatch' =>
-      "Ce n'est pas le compte $provider connecté. Choisissez le même compte. "
-          "Rien n'a été supprimé.",
+    'user-mismatch' => l.deleteWrongAccount(provider),
     'popup-blocked' || 'operation-not-supported-in-this-environment' =>
-      "La fenêtre $provider n'a pas pu s'ouvrir. Déconnectez-vous, "
-          "reconnectez-vous, puis relancez la suppression dans les cinq minutes.",
-    'network-request-failed' =>
-      "Pas de connexion à Internet. Rien n'a été supprimé.",
-    _ => "La vérification d'identité a échoué ($code). Rien n'a été supprimé.",
+      l.deletePopupBlocked(provider),
+    'network-request-failed' => l.deleteNoInternet,
+    _ => l.deleteIdentityFailedCode(code),
   };
 }
 
@@ -140,7 +129,8 @@ class _ConfirmDeletionDialog extends StatefulWidget {
 }
 
 class _ConfirmDeletionDialogState extends State<_ConfirmDeletionDialog> {
-  static const _word = 'SUPPRIMER';
+  /// Le mot à taper, dans la langue de l'interface.
+  String get _word => context.l10n.deleteAccountConfirmWord;
   final _controller = TextEditingController();
 
   bool get _armed => _controller.text.trim().toUpperCase() == _word;
@@ -157,22 +147,19 @@ class _ConfirmDeletionDialogState extends State<_ConfirmDeletionDialog> {
 
     return AlertDialog(
       icon: Icon(Icons.delete_forever_rounded, color: danger, size: 32),
-      title: const Text("Supprimer votre compte ?"),
+      title: Text(context.l10n.deleteAccountTitle),
       content: SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              "Tout sera effacé définitivement : vos koï et leurs photos, "
-              "leur croissance, vos relevés d'eau, vos plantes, vos autres "
-              "poissons et votre bassin. Rien ne pourra être récupéré.",
+              context.l10n.deleteAccountBody,
               style: context.texts.bodyLarge,
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(
-              "${AuthService.providerLabel} vous demandera peut-être de "
-              "confirmer votre identité.",
+              context.l10n.deleteAccountIdentityHint(AuthService.providerLabel),
               style: context.texts.bodyMedium,
             ),
             const SizedBox(height: AppSpacing.md),
@@ -181,8 +168,8 @@ class _ConfirmDeletionDialogState extends State<_ConfirmDeletionDialog> {
               autofocus: true,
               textCapitalization: TextCapitalization.characters,
               onChanged: (_) => setState(() {}),
-              decoration: const InputDecoration(
-                labelText: "Tapez $_word pour confirmer",
+              decoration: InputDecoration(
+                labelText: context.l10n.deleteAccountTypeWord(_word),
               ),
             ),
           ],
@@ -191,12 +178,12 @@ class _ConfirmDeletionDialogState extends State<_ConfirmDeletionDialog> {
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, false),
-          child: const Text('Annuler'),
+          child: Text(context.l10n.commonCancel),
         ),
         TextButton(
           onPressed: _armed ? () => Navigator.pop(context, true) : null,
           style: TextButton.styleFrom(foregroundColor: danger),
-          child: const Text('Supprimer définitivement'),
+          child: Text(context.l10n.deleteForever),
         ),
       ],
     );
@@ -221,7 +208,7 @@ class _DeletionProgressDialog extends StatelessWidget {
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Text(
-                "Suppression de vos données…",
+                context.l10n.deleteInProgress,
                 style: context.texts.bodyLarge,
               ),
             ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/l10n.dart';
 import 'package:intl/intl.dart';
 import '../../../models/koi.dart';
 import '../../../services/koi_service.dart';
@@ -25,20 +26,20 @@ class KoiIdentityCard extends StatelessWidget {
             children: [
               InfoTile(
                 icon: Icons.color_lens_rounded,
-                label: "Variété",
+                label: context.l10n.koiVariety,
                 value: koi.variety.isEmpty ? "—" : koi.variety,
               ),
               const VerticalRule(),
               InfoTile(
                 icon: Icons.cake_rounded,
-                label: "Âge",
-                value: koi.ageLabel(),
+                label: context.l10n.koiAge,
+                value: koi.ageLabel(context.l10n),
               ),
               const VerticalRule(),
               InfoTile(
                 icon: Icons.wc_rounded,
-                label: "Sexe",
-                value: koi.sex.label,
+                label: context.l10n.koiFormSex,
+                value: koi.sex.label(context.l10n),
               ),
             ],
           ),
@@ -70,8 +71,12 @@ class KoiIdentityCard extends StatelessWidget {
                       children: [
                         Text(
                           birthDate == null
-                              ? "Date de naissance à renseigner"
-                              : "Né le ${DateFormat('d MMMM yyyy', 'fr_FR').format(birthDate)}",
+                              ? context.l10n.koiBirthDateMissing
+                              : context.l10n.koiBornOn(
+                                  DateFormat.yMMMMd(
+                                    context.localeName,
+                                  ).format(birthDate),
+                                ),
                           style: context.texts.labelLarge?.copyWith(
                             color: birthDate == null
                                 ? context.pond.warning
@@ -82,9 +87,11 @@ class KoiIdentityCard extends StatelessWidget {
                         Text(
                           birthDate == null
                               ? (koi.legacyAge != null
-                                    ? "Âge approximatif repris de l'ancienne fiche"
-                                    : "Appuyez pour l'ajouter")
-                              : "Classe d'âge : ${koi.yearClass()}",
+                                    ? context.l10n.koiAgeApprox
+                                    : context.l10n.tapToAdd)
+                              : context.l10n.koiYearClass(
+                                  koi.yearClass(context.l10n) ?? '',
+                                ),
                           style: context.texts.labelMedium,
                         ),
                       ],
@@ -124,9 +131,9 @@ class KoiIdentityCard extends StatelessWidget {
       initialDate: initial,
       firstDate: DateTime(1950),
       lastDate: now,
-      helpText: 'Date de naissance de ${koi.name}',
-      cancelText: 'Annuler',
-      confirmText: 'Enregistrer',
+      helpText: context.l10n.koiBirthDateOf(koi.name),
+      cancelText: context.l10n.commonCancel,
+      confirmText: context.l10n.commonSave,
     );
 
     if (picked == null) return;
@@ -136,7 +143,7 @@ class KoiIdentityCard extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Impossible d'enregistrer la date : $e")),
+          SnackBar(content: Text(context.l10n.koiBirthDateError(e))),
         );
       }
     }
@@ -158,7 +165,7 @@ class KoiOriginCard extends StatelessWidget {
           if (koi.breeder != null)
             LabelledRow(
               icon: Icons.storefront_rounded,
-              label: "Éleveur",
+              label: context.l10n.koiBreeder,
               value: koi.breeder!,
             ),
           if (koi.breeder != null && koi.origin != null)
@@ -166,7 +173,7 @@ class KoiOriginCard extends StatelessWidget {
           if (koi.origin != null)
             LabelledRow(
               icon: Icons.place_rounded,
-              label: "Provenance",
+              label: context.l10n.koiSectionOrigin,
               value: koi.origin!,
             ),
         ],

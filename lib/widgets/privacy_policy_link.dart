@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../l10n/l10n.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../config.dart';
 
@@ -14,6 +15,7 @@ class PrivacyPolicyLink extends StatelessWidget {
 
   Future<void> _open(BuildContext context) async {
     final messenger = ScaffoldMessenger.of(context);
+    final l10n = context.l10n;
     var opened = false;
     try {
       opened = await launchUrl(
@@ -27,7 +29,7 @@ class PrivacyPolicyLink extends StatelessWidget {
       messenger.showSnackBar(
         SnackBar(
           content: Text(
-            "Impossible d'ouvrir la page : ${AppConfig.privacyPolicyUrl}",
+            l10n.privacyOpenError('${AppConfig.privacyPolicyUrl}'),
           ),
         ),
       );
@@ -40,7 +42,7 @@ class PrivacyPolicyLink extends StatelessWidget {
       onPressed: () => _open(context),
       icon: Icon(Icons.privacy_tip_outlined, size: 18, color: color),
       label: Text(
-        "Politique de confidentialité",
+        context.l10n.privacyPolicy,
         style: TextStyle(color: color),
       ),
     );
